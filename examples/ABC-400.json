@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "manufacturer": "Custom",
+      "model_name": "ABC-400",
+      "resolution_width": 4096,
+      "resolution_height": 3072,
+      "hfov_deg": 70,
+      "vfov_deg": 58,
+      "focal_length_mm": 8,
+      "min_working_distance_m": 0.5,
+      "max_working_distance_m": 20,
+      "minimum_marker_pixels": 4,
+      "default_pixel_localization_error_px": 0.1,
+      "input_mode": "basic",
+      "distortion_model": "none",
+      "distortion_parameters": [0, 0, 0, 0, 0],
+      "notes": "PRD example. Synthetic parameters for acceptance testing, not a commercial product specification."
+    }
+  ]
+}

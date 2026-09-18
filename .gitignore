@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+test-results/
+.DS_Store
+*.tsbuildinfo
+build/app/
+build/resources/
+release/
+output/
+tmp/
+.env
+.env.*
+!.env.example
+*.cameraplanner.json
+__pycache__/
+*.pyc

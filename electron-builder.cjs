@@ -1,0 +1,40 @@
+const path = require("node:path");
+
+module.exports = {
+  appId: "com.scenelab.desktop",
+  productName: "SceneLab",
+  electronVersion: require("electron/package.json").version,
+  electronDist: path.join(__dirname, "node_modules/electron/dist"),
+  directories: { app: "build/app", output: "release/build", buildResources: "build/resources" },
+  asar: true,
+  npmRebuild: false,
+  files: ["dist/**/*", "electron/**/*", "package.json"],
+  extraFiles: [
+    { from: "output/pdf/SceneLab_v1.0_使用说明.pdf", to: "使用说明.pdf" },
+    { from: "docs/先读我.txt", to: "先读我.txt" },
+    { from: "docs/v1.0-更新说明.txt", to: "v1.0-更新说明.txt" },
+    { from: "build/resources/THIRD-PARTY-NOTICES.txt", to: "THIRD-PARTY-NOTICES.txt" },
+    { from: "examples", to: "示例相机参数" },
+  ],
+  win: {
+    target: [{ target: "nsis", arch: ["x64"] }, { target: "zip", arch: ["x64"] }],
+    executableName: "SceneLab",
+    icon: "build/resources/icon.ico",
+    artifactName: "SceneLab-${version}-Windows-${arch}.zip",
+  },
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowElevation: true,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: "SceneLab",
+    uninstallDisplayName: "SceneLab v1.0",
+    deleteAppDataOnUninstall: false,
+    runAfterFinish: false,
+    installerLanguages: ["zh_CN", "en_US"],
+    language: "2052",
+    artifactName: "SceneLab-${version}-Setup-${arch}.exe",
+  },
+};
