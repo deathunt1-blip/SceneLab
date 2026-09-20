@@ -310,7 +310,7 @@ const zh = {
   groupHeight: "统一高度",
   boundaryNote: "计算边界不作为实体墙参与遮挡。",
   cameraSnapshotNote: "型号替换保留位置和姿态。",
-  heatmapSampled: "为保持流畅，显示最多 60,000 个采样点；统计使用全部采样点。",
+  heatmapSampled: "细网格合并显示：取区域内最低覆盖、最差精度；统计使用全部采样点。",
   analysisPlane: "查询平面高度",
   help: "快捷操作",
   shortcuts:
@@ -659,7 +659,7 @@ const en: Record<keyof typeof zh, string> = {
   boundaryNote: "The volume boundary does not act as an occluding wall.",
   cameraSnapshotNote: "Replacing a model preserves position and orientation.",
   heatmapSampled:
-    "Displays up to 60,000 samples for responsiveness; statistics use all samples.",
+    "Fine cells are merged for display using lowest coverage and worst accuracy; statistics use all samples.",
   analysisPlane: "Query plane height",
   help: "Shortcuts",
   shortcuts:

@@ -110,6 +110,7 @@ export interface SimulationResult {
   revision: number;
   timestamp: string;
   elapsed: number;
+  boundary: Vec3;
   voxelSize: Vec3;
   positions: Float32Array;
   counts: Uint16Array;

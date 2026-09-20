@@ -50,6 +50,7 @@ import { makeCamera, makeObject, makeProject } from "./project/data";
 import { add, rotate } from "./simulation/math";
 import { useSimulation } from "./simulation/useSimulation";
 import { Viewport, captureViewport } from "./renderer/Viewport";
+import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
 import { Inspector } from "./components/Inspector";
 import { AnalysisPanel, Issues } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
@@ -767,6 +768,9 @@ export default function App() {
                           : fmt(s.settings.errorThreshold * 2)}
                       </span>
                     </div>
+                    {r && r.counts.length > MAX_HEATMAP_CELLS && (
+                      <p className="muted tiny">{t("heatmapSampled")}</p>
+                    )}
                     <div className="heatmap-slider">
                       <label>
                         {t("clip")}

@@ -329,6 +329,7 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
     revision: s.revision,
     timestamp: new Date().toISOString(),
     elapsed: performance.now() - start,
+    boundary: [...s.boundary],
     voxelSize: [lx / ns[0], ly / ns[1], lz / ns[2]],
     positions: positions.slice(0, used * 3),
     counts: counts.slice(0, used),

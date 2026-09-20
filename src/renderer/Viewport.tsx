@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -15,6 +15,7 @@ import { basis, dot, rad } from "../simulation/math";
 import type { SceneObject, Vec3 } from "../models";
 import { analyzePoint, worldMarkers } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
+import { buildHeatmapCells } from "./heatmap";
 type Runtime = {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
@@ -78,6 +79,10 @@ export function Viewport() {
   if (runtimeRef.current) runtime = runtimeRef.current;
   const state = useStore(),
     scheme = activeScheme(state);
+  const heatmapCells = useMemo(
+    () => (state.result ? buildHeatmapCells(state.result, state.clip) : []),
+    [state.result, state.clip],
+  );
   useEffect(() => {
     if (!host.current) return;
     const el = host.current;
@@ -365,30 +370,14 @@ export function Viewport() {
       }
     }
     if (state.result && state.result.schemeId === scheme.id && state.layer !== "none") {
-      const result = state.result,
-        indices: number[] = [];
-      const stride = Math.max(1, Math.ceil(result.counts.length / 60000));
-      for (let i = 0; i < result.counts.length; i += stride)
-        if (result.positions[i * 3 + 2] <= state.clip) indices.push(i);
-      // Fill the sampled cell equally on every axis, including in side views.
-      const voxelSize =
-        result.voxelSize ??
-        scheme.boundary.map(
-          (length) => length / Math.ceil(length / scheme.settings.voxel),
-        );
-      const fill = 0.98;
       const mesh = new THREE.InstancedMesh(
-        new THREE.BoxGeometry(
-          voxelSize[0] * fill,
-          voxelSize[1] * fill,
-          voxelSize[2] * fill,
-        ),
+        new THREE.BoxGeometry(1, 1, 1),
         new THREE.MeshBasicMaterial({
           transparent: true,
           opacity: state.opacity * 0.53,
           depthWrite: false,
         }),
-        indices.length,
+        heatmapCells.length,
       );
       const matrix = new THREE.Matrix4();
       const maximum = Math.max(
@@ -397,18 +386,15 @@ export function Viewport() {
           .filter((o) => o.kind === "camera" && o.enabled)
           .map((_, i) => i + 1),
       );
-      indices.forEach((i, j) => {
-        matrix.makeTranslation(
-          result.positions[i * 3],
-          result.positions[i * 3 + 1],
-          result.positions[i * 3 + 2],
-        );
+      heatmapCells.forEach((cell, j) => {
+        matrix.makeScale(...cell.size);
+        matrix.setPosition(...cell.position);
         mesh.setMatrixAt(j, matrix);
         mesh.setColorAt(
           j,
           heatColor(
-            result.counts[i],
-            result.errors[i],
+            cell.count,
+            cell.error,
             state.layer,
             maximum,
             scheme.settings.errorThreshold * 2,
@@ -454,6 +440,7 @@ export function Viewport() {
     state.tool,
     state.mode,
     state.point,
+    heatmapCells,
   ]);
   useEffect(() => {
     const rt = runtime;
