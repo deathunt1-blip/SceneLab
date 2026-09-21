@@ -259,6 +259,45 @@ export function CameraLibrary() {
                     fps
                   </b>
                 </div>
+                {draft.stereo && (
+                  <div className="catalog-specs">
+                    {(
+                      [
+                        ["imageMode", draft.catalog.optical.image_mode],
+                        ["sensorType", draft.catalog.camera.sensor],
+                        ["aperture", draft.catalog.optical.aperture],
+                        [
+                          "focalTolerance",
+                          draft.catalog.optical.focal_tolerance_mm == null
+                            ? null
+                            : `±${draft.catalog.optical.focal_tolerance_mm} mm`,
+                        ],
+                        ["irFilter", draft.catalog.optical.ir_cut],
+                        ["illumination", draft.catalog.optical.ir_led],
+                        ["transmission", draft.catalog.camera.transmission],
+                        ["powerSupply", draft.catalog.camera.power_supply],
+                        ["communication", draft.catalog.camera.communication],
+                        ["interface", draft.catalog.camera.interface],
+                        ["sync", draft.catalog.camera.sync],
+                        [
+                          "standbyPower",
+                          `${draft.catalog.camera.standby_power_w ?? "—"} W`,
+                        ],
+                        ["maxPower", `${draft.catalog.camera.max_power_w ?? "—"} W`],
+                        ["weight", `${draft.catalog.camera.weight_g ?? "—"} g`],
+                        [
+                          "bodyDimensions",
+                          `${draft.catalog.camera.dimensions_mm ?? "—"} mm`,
+                        ],
+                      ] as const
+                    ).map(([label, value]) => (
+                      <div className="catalog-spec-row" key={label}>
+                        <span>{t(label)}</span>
+                        <b>{String(value ?? "—")}</b>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <p>{t("catalogAssumptions")}</p>
               </details>
             )}
@@ -348,6 +387,41 @@ export function CameraLibrary() {
                 </select>
               </Field>
             </div>
+            <Toggle
+              label={t("unlimitedRange")}
+              disabled={readonly}
+              checked={draft.max_working_distance_m === null}
+              onChange={(unlimited) =>
+                update({
+                  max_working_distance_m: unlimited
+                    ? null
+                    : Math.max(20, draft.min_working_distance_m + 1),
+                })
+              }
+            />
+            <Toggle
+              label={t("stereoCamera")}
+              disabled={readonly}
+              checked={!!draft.stereo}
+              onChange={(stereo) =>
+                update({ stereo: stereo ? { baseline_mm: 100 } : undefined })
+              }
+            />
+            {draft.stereo && (
+              <>
+                <Field label={t("baseline")}>
+                  <Num
+                    aria-label={t("baseline")}
+                    unit="mm"
+                    min={0.1}
+                    value={draft.stereo.baseline_mm}
+                    disabled={readonly}
+                    onChange={(baseline_mm) => update({ stereo: { baseline_mm } })}
+                  />
+                </Field>
+                <p className="small muted">{t("stereoAssumptions")}</p>
+              </>
+            )}
             {draft.catalog?.optical.passive_range_m != null &&
               draft.catalog.optical.active_range_m != null && (
                 <Field label={t("trackingRangeMode")}>

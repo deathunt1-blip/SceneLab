@@ -819,6 +819,7 @@ h4 {
   font-size: 9px;
   pointer-events: none;
 }
+.catalog-spec-row { display: contents; }
 .heatmap-controls {
   position: absolute;
   left: 23px;

@@ -51,6 +51,7 @@ import { add, rotate } from "./simulation/math";
 import { useSimulation } from "./simulation/useSimulation";
 import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
+import { viewCount } from "./simulation/engine";
 import { Inspector } from "./components/Inspector";
 import { AnalysisPanel, Issues } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
@@ -67,6 +68,7 @@ const icons = {
   marker: CircleDot,
   rigidBody: Layers,
   truss: Frame,
+  tube: Cuboid,
   surface: Square,
 };
 function SceneTree() {
@@ -75,7 +77,7 @@ function SceneTree() {
     s = activeScheme(st);
   const [closed, setClosed] = useState<string[]>([]);
   const groups = [
-    ["structures", ["truss", "surface"]],
+    ["structures", ["truss", "tube", "surface"]],
     ["obstacles", ["box", "cylinder", "wall"]],
     ["cameras", ["camera"]],
     ["markers", ["marker"]],
@@ -95,7 +97,8 @@ function SceneTree() {
         s.objects.filter((o) => o.kind === "camera").length + 1,
       );
     }
-    if (kind === "truss") obj.position = [0, 0, Math.min(3.6, s.boundary[2])];
+    if (kind === "truss" || kind === "tube")
+      obj.position = [0, 0, Math.min(3.6, s.boundary[2])];
     if (kind === "surface") obj.position = [0, 0, s.boundary[2]];
     if (kind === "marker") {
       obj.position = [0, 0, s.boundary[2] / 2];
@@ -211,6 +214,7 @@ function SceneTree() {
               "cylinder",
               "wall",
               "truss",
+              "tube",
               "surface",
               "marker",
               "rigidBody",
@@ -234,7 +238,7 @@ function SceneTree() {
       <div className="left-footer">
         <span className="status-dot" />
         {t("local")}
-        <span>v1.0</span>
+        <span>v1.1</span>
       </div>
     </aside>
   );
@@ -756,7 +760,9 @@ export default function App() {
                     <div className="legend-title">
                       {t(st.layer === "coverage" ? "legendCoverage" : "legendAccuracy")}
                       <span>
-                        {st.layer === "coverage" ? `0 – ${Math.max(5, cameras)}` : "mm"}
+                        {st.layer === "coverage"
+                          ? `0 – ${Math.max(5, viewCount(s))}`
+                          : "mm"}
                       </span>
                     </div>
                     <div className={"gradient " + st.layer} />
@@ -764,7 +770,7 @@ export default function App() {
                       <span>{st.layer === "coverage" ? "0" : "0.00"}</span>
                       <span>
                         {st.layer === "coverage"
-                          ? Math.max(5, cameras)
+                          ? Math.max(5, viewCount(s))
                           : fmt(s.settings.errorThreshold * 2)}
                       </span>
                     </div>

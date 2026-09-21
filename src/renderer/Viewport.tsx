@@ -13,7 +13,7 @@ import {
 } from "./scene";
 import { basis, dot, rad } from "../simulation/math";
 import type { SceneObject, Vec3 } from "../models";
-import { analyzePoint, worldMarkers } from "../simulation/engine";
+import { analyzePoint, worldMarkers, viewCount } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
 import { buildHeatmapCells } from "./heatmap";
 type Runtime = {
@@ -380,12 +380,7 @@ export function Viewport() {
         heatmapCells.length,
       );
       const matrix = new THREE.Matrix4();
-      const maximum = Math.max(
-        5,
-        ...scheme.objects
-          .filter((o) => o.kind === "camera" && o.enabled)
-          .map((_, i) => i + 1),
-      );
+      const maximum = Math.max(5, viewCount(scheme));
       heatmapCells.forEach((cell, j) => {
         matrix.makeScale(...cell.size);
         matrix.setPosition(...cell.position);
@@ -422,7 +417,7 @@ export function Viewport() {
         const c = scheme.objects.find((c) => c.id === o.cameraId)!;
         rt.content.add(
           line(
-            [c.position, state.point],
+            [o.cameraPosition ?? c.position, state.point],
             o.valid ? "#0e9d80" : "#d67862",
             o.valid ? 0.55 : 0.16,
           ),

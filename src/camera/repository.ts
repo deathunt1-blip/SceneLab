@@ -1,6 +1,7 @@
 import type { CameraModel } from "../models";
 import { uid } from "../models";
 import { catalogEntries, catalogVersion } from "./catalog";
+import { p3CatalogVersion, p3Entry } from "./p3";
 const KEY = "camera-planner.camera-library.v1";
 let appliedCatalogs: string[] = [];
 export const storageStatus = { error: "" };
@@ -100,10 +101,9 @@ export function validateModel(m: CameraModel): string[] {
   if (
     !Number.isFinite(m.min_working_distance_m) ||
     m.min_working_distance_m < 0 ||
-    (m.max_working_distance_m === null
-      ? m.layout_supported !== false
-      : !Number.isFinite(m.max_working_distance_m) ||
-        m.max_working_distance_m <= m.min_working_distance_m)
+    (m.max_working_distance_m !== null &&
+      (!Number.isFinite(m.max_working_distance_m) ||
+        m.max_working_distance_m <= m.min_working_distance_m))
   )
     errors.push("rangeInvalid");
   if (
@@ -136,6 +136,18 @@ export function validateModel(m: CameraModel): string[] {
     [m.layout_supported, m.enabled_for_layout_default].some(
       (v) => v !== undefined && typeof v !== "boolean",
     )
+  )
+    errors.push("invalidFile");
+  if (
+    m.stereo !== undefined &&
+    (!m.stereo || !Number.isFinite(m.stereo.baseline_mm) || m.stereo.baseline_mm <= 0)
+  )
+    errors.push("baselineInvalid");
+  if (
+    m.housing_mm !== undefined &&
+    (!Array.isArray(m.housing_mm) ||
+      m.housing_mm.length !== 3 ||
+      m.housing_mm.some((v) => !Number.isFinite(v) || v <= 0))
   )
     errors.push("invalidFile");
   if (
@@ -182,19 +194,27 @@ export function readLibrary(): CameraModel[] {
 }
 export const createCatalogModels = () =>
   catalogEntries().map((entry) => derive({ ...newModel(), ...entry }));
+export const createP3Model = () => derive({ ...newModel(), ...p3Entry });
 function addCatalog(models: CameraModel[]) {
-  if (appliedCatalogs.includes(catalogVersion)) return models;
-  const additions = createCatalogModels().filter(
-    (entry) =>
-      !models.some(
-        (m) =>
-          m.id === entry.id ||
-          (m.catalog?.dataset === catalogVersion &&
-            m.catalog.optical.profile_id === entry.catalog!.optical.profile_id),
-      ),
-  );
+  const pending = [
+    { version: catalogVersion, create: createCatalogModels },
+    { version: p3CatalogVersion, create: () => [createP3Model()] },
+  ].filter((catalog) => !appliedCatalogs.includes(catalog.version));
+  if (!pending.length) return models;
+  const additions = pending
+    .flatMap((catalog) => catalog.create())
+    .filter(
+      (entry) =>
+        !models.some(
+          (m) =>
+            m.id === entry.id ||
+            (m.catalog &&
+              m.catalog.dataset === entry.catalog?.dataset &&
+              m.catalog.optical.profile_id === entry.catalog!.optical.profile_id),
+        ),
+    );
   const merged = [...models, ...additions];
-  const nextCatalogs = [...appliedCatalogs, catalogVersion];
+  const nextCatalogs = [...appliedCatalogs, ...pending.map((catalog) => catalog.version)];
   if (
     persist(KEY, { schema_version: 1, models: merged, applied_catalogs: nextCatalogs })
   ) {
@@ -279,7 +299,7 @@ export function importModels(text: string, csv: boolean): CameraModel[] {
       Object.fromEntries(
         headers.map((k, i) => [
           k,
-          k === "catalog"
+          ["catalog", "stereo", "housing_mm"].includes(k)
             ? row[i]
               ? JSON.parse(row[i])
               : undefined

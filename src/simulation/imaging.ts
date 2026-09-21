@@ -1,6 +1,6 @@
-import type { Observation, Scheme, Vec3 } from "../models";
-import { observe, obstacles, project, worldMarkers, type PreparedCamera } from "./engine";
-import { add, basis, rotate } from "./math";
+import type { CameraEye, Observation, Scheme, Vec3 } from "../models";
+import { observe, obstacles, project, worldMarkers, prepareCamera } from "./engine";
+import { add, rotate } from "./math";
 
 export interface ImageMarker extends Observation {
   id: string;
@@ -11,14 +11,11 @@ export interface ImageMarker extends Observation {
   drawable: boolean;
 }
 
-export function cameraImage(s: Scheme, cameraId: string) {
+export function cameraImage(s: Scheme, cameraId: string, eye?: CameraEye) {
   const object = s.objects.find((o) => o.id === cameraId && o.kind === "camera");
   if (!object?.camera_model_snapshot) return null;
-  const c: PreparedCamera = {
-    object,
-    model: object.camera_model_snapshot,
-    axes: basis(object.rotation),
-  };
+  const views = prepareCamera(object);
+  const c = views.find((view) => view.eye === eye) ?? views[0];
   const segments: { a: Vec3; b: Vec3; color: string }[] = [];
   const box = (position: Vec3, size: Vec3, rotation: Vec3, color: string) => {
     const corners = Array.from({ length: 8 }, (_, i) =>
@@ -42,7 +39,10 @@ export function cameraImage(s: Scheme, cameraId: string) {
   };
   box([0, 0, s.boundary[2] / 2], s.boundary, [0, 0, 0], "#34454b");
   for (const o of s.objects)
-    if (o.visible && ["box", "cylinder", "wall", "truss", "surface"].includes(o.kind))
+    if (
+      o.visible &&
+      ["box", "cylinder", "wall", "truss", "tube", "surface"].includes(o.kind)
+    )
       box(o.position, o.size, o.rotation, o.kind === "truss" ? "#50656b" : "#77929a");
   const projected = segments.flatMap(({ a, b, color }) => {
     let pa = project(a, c),
@@ -87,7 +87,7 @@ export function cameraImage(s: Scheme, cameraId: string) {
         };
       }),
     );
-  return { camera: object, model: c.model, projected, points };
+  return { camera: object, model: c.model, eye: c.eye, projected, points };
 }
 export type CameraImage = NonNullable<ReturnType<typeof cameraImage>>;
 

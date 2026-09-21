@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "./store";
-import { newModel, storageStatus } from "./camera/repository";
-import { makeProject } from "./project/data";
+import { createP3Model, newModel, storageStatus } from "./camera/repository";
+import { makeCamera, makeObject, makeProject } from "./project/data";
 
 let useStore: typeof import("./store").useStore;
 let entries: Map<string, string>;
@@ -21,6 +21,28 @@ beforeEach(() => {
 });
 
 describe("scene clipboard and history", () => {
+  it("copies a tube and mounted stereo camera, preserves calibration and undoes dimension edits", () => {
+    const tube = makeObject("tube");
+    const camera = {
+      ...makeCamera(createP3Model(), [0, 0, 1], [0, 2, 1]),
+      mount: tube.id,
+    };
+    state().edit((s) => {
+      s.objects.push(tube, camera);
+    });
+    state().set({ selected: [tube.id, camera.id] });
+    state().copy();
+    state().paste();
+    const copies = state().project.schemes[0].objects.slice(-2);
+    expect(copies[1].mount).toBe(copies[0].id);
+    expect(copies[1].camera_model_snapshot!.stereo).toEqual({ baseline_mm: 144 });
+    state().updateObjects([copies[0].id], { size: [9, 0.08, 0.06] });
+    expect(state().project.schemes[0].objects.at(-2)!.size).toEqual([9, 0.08, 0.06]);
+    state().undo();
+    expect(state().project.schemes[0].objects.at(-2)!.size).toEqual([4, 0.05, 0.05]);
+    state().redo();
+    expect(state().project.schemes[0].objects.at(-2)!.size).toEqual([9, 0.08, 0.06]);
+  });
   it("copies a snapshot, pastes fresh objects and supports undo/redo as one batch", () => {
     const originals = state().project.schemes[0].objects.slice(0, 2);
     const before = state().project.schemes[0].objects.length;

@@ -1,5 +1,5 @@
 import { useId, useMemo } from "react";
-import type { Language, Scheme } from "../models";
+import type { CameraEye, Language, Scheme } from "../models";
 import { translate } from "../i18n";
 import { cameraImage, type CameraImage } from "../simulation/imaging";
 import { fmt } from "./Common";
@@ -61,12 +61,17 @@ export function ReportCameraImage({
   scheme,
   cameraId,
   lang,
+  eye,
 }: {
   scheme: Scheme;
   cameraId: string;
   lang: Language;
+  eye?: CameraEye;
 }) {
-  const scene = useMemo(() => cameraImage(scheme, cameraId), [scheme, cameraId]);
+  const scene = useMemo(
+    () => cameraImage(scheme, cameraId, eye),
+    [scheme, cameraId, eye],
+  );
   const t = (key: string) => translate(lang, key);
   if (!scene) return <p>{t("previewHint")}</p>;
   return (
@@ -74,8 +79,12 @@ export function ReportCameraImage({
       <figure>
         <CameraDiagram scene={scene} label={`${scene.camera.name} · ${t("preview")}`} />
         <figcaption>
-          <strong>{scene.camera.name}</strong> · {scene.model.model_name} ·{" "}
-          {scene.model.resolution_width} × {scene.model.resolution_height} px ·{" "}
+          <strong>
+            {scene.camera.name}
+            {scene.eye ? ` · ${t(scene.eye + "Eye")}` : ""}
+          </strong>{" "}
+          · {scene.model.model_name} · {scene.model.resolution_width} ×{" "}
+          {scene.model.resolution_height} px ·{" "}
           {t(scene.camera.enabled ? "enable" : "off")}
         </figcaption>
       </figure>

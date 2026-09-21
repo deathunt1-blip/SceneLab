@@ -78,97 +78,144 @@ export function makeSceneObject(
   group.visible = o.visible;
   const accent = selected ? "#f4a83b" : "#16a58f";
   if (o.kind === "camera") {
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.25, 0.18, 0.19),
-      material(selected ? "#efa33b" : "#31474d"),
-    );
-    body.position.z = -0.07;
-    group.add(body);
-    const face = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.19, 0.015),
-      material("#19262a"),
-    );
-    face.position.z = 0.035;
-    group.add(face);
-    const lens = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.057, 0.057, 0.08, 20),
-      material(accent),
-    );
-    lens.rotation.x = Math.PI / 2;
-    lens.position.z = 0.065;
-    group.add(lens);
-    const glass = new THREE.Mesh(
-      new THREE.CircleGeometry(0.042, 20),
-      material("#061e25"),
-    );
-    glass.position.z = 0.108;
-    group.add(glass);
-    for (const [x, y] of [
-      [-0.09, -0.055],
-      [0.09, -0.055],
-      [-0.09, 0.055],
-      [0.09, 0.055],
-    ]) {
-      const led = new THREE.Mesh(
-        new THREE.SphereGeometry(0.013, 8, 6),
-        material("#a1dad0"),
+    const stereo = o.camera_model_snapshot?.stereo;
+    if (stereo) {
+      const housing = o.camera_model_snapshot!.housing_mm ?? [
+        stereo.baseline_mm + 44,
+        56,
+        38.5,
+      ];
+      const [width, height, depth] = housing.map((v) => v / 1000);
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, depth),
+        material(selected ? "#efa33b" : "#31474d"),
       );
-      led.position.set(x, y, 0.047);
-      group.add(led);
+      body.position.z = -depth / 2;
+      group.add(body);
+      for (const side of [-1, 1]) {
+        const x = (side * stereo.baseline_mm) / 2000;
+        const lens = new THREE.Mesh(
+          new THREE.CircleGeometry(0.012, 24),
+          material(accent),
+        );
+        lens.position.set(x, 0, 0.001);
+        group.add(lens);
+        const glass = new THREE.Mesh(
+          new THREE.CircleGeometry(0.009, 24),
+          material("#061e25"),
+        );
+        glass.position.set(x, 0, 0.002);
+        group.add(glass);
+        for (const dx of [-0.015, 0.015])
+          for (const y of [-0.018, 0.018]) {
+            const led = new THREE.Mesh(
+              new THREE.CircleGeometry(0.003, 8),
+              material("#a1dad0"),
+            );
+            led.position.set(x + dx, y, 0.001);
+            group.add(led);
+          }
+      }
+    } else {
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.18, 0.19),
+        material(selected ? "#efa33b" : "#31474d"),
+      );
+      body.position.z = -0.07;
+      group.add(body);
+      const face = new THREE.Mesh(
+        new THREE.BoxGeometry(0.26, 0.19, 0.015),
+        material("#19262a"),
+      );
+      face.position.z = 0.035;
+      group.add(face);
+      const lens = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.057, 0.057, 0.08, 20),
+        material(accent),
+      );
+      lens.rotation.x = Math.PI / 2;
+      lens.position.z = 0.065;
+      group.add(lens);
+      const glass = new THREE.Mesh(
+        new THREE.CircleGeometry(0.042, 20),
+        material("#061e25"),
+      );
+      glass.position.z = 0.108;
+      group.add(glass);
+      for (const [x, y] of [
+        [-0.09, -0.055],
+        [0.09, -0.055],
+        [-0.09, 0.055],
+        [0.09, 0.055],
+      ]) {
+        const led = new THREE.Mesh(
+          new THREE.SphereGeometry(0.013, 8, 6),
+          material("#a1dad0"),
+        );
+        led.position.set(x, y, 0.047);
+        group.add(led);
+      }
     }
     if ((selected || showFrustum) && o.enabled && o.camera_model_snapshot) {
-      const m = o.camera_model_snapshot,
-        d = selected ? 3.4 : 1.35;
-      const pts: Vec3[] = [
-        [(-m.cx / m.fx) * d, (-m.cy / m.fy) * d, d],
-        [((m.resolution_width - m.cx) / m.fx) * d, (-m.cy / m.fy) * d, d],
-        [
-          ((m.resolution_width - m.cx) / m.fx) * d,
-          ((m.resolution_height - m.cy) / m.fy) * d,
-          d,
-        ],
-        [(-m.cx / m.fx) * d, ((m.resolution_height - m.cy) / m.fy) * d, d],
-      ];
-      for (const p of pts)
-        group.add(line([[0, 0, 0], p], accent, selected ? 0.55 : 0.24));
-      group.add(line([...pts, pts[0]], accent, selected ? 0.65 : 0.3));
-      if (selected) {
-        const vertices = new Float32Array([
-          0,
-          0,
-          0,
-          ...pts[0],
-          ...pts[1],
-          0,
-          0,
-          0,
-          ...pts[1],
-          ...pts[2],
-          0,
-          0,
-          0,
-          ...pts[2],
-          ...pts[3],
-          0,
-          0,
-          0,
-          ...pts[3],
-          ...pts[0],
-        ]);
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-        group.add(
-          new THREE.Mesh(
-            geo,
-            new THREE.MeshBasicMaterial({
-              color: accent,
-              transparent: true,
-              opacity: 0.035,
-              side: THREE.DoubleSide,
-              depthWrite: false,
-            }),
-          ),
-        );
+      for (const offset of stereo
+        ? [-stereo.baseline_mm / 2000, stereo.baseline_mm / 2000]
+        : [0]) {
+        const frustum = new THREE.Group();
+        frustum.position.x = offset;
+        group.add(frustum);
+        const m = o.camera_model_snapshot,
+          d = selected ? 3.4 : 1.35;
+        const pts: Vec3[] = [
+          [(-m.cx / m.fx) * d, (-m.cy / m.fy) * d, d],
+          [((m.resolution_width - m.cx) / m.fx) * d, (-m.cy / m.fy) * d, d],
+          [
+            ((m.resolution_width - m.cx) / m.fx) * d,
+            ((m.resolution_height - m.cy) / m.fy) * d,
+            d,
+          ],
+          [(-m.cx / m.fx) * d, ((m.resolution_height - m.cy) / m.fy) * d, d],
+        ];
+        for (const p of pts)
+          frustum.add(line([[0, 0, 0], p], accent, selected ? 0.55 : 0.24));
+        frustum.add(line([...pts, pts[0]], accent, selected ? 0.65 : 0.3));
+        if (selected) {
+          const vertices = new Float32Array([
+            0,
+            0,
+            0,
+            ...pts[0],
+            ...pts[1],
+            0,
+            0,
+            0,
+            ...pts[1],
+            ...pts[2],
+            0,
+            0,
+            0,
+            ...pts[2],
+            ...pts[3],
+            0,
+            0,
+            0,
+            ...pts[3],
+            ...pts[0],
+          ]);
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+          frustum.add(
+            new THREE.Mesh(
+              geo,
+              new THREE.MeshBasicMaterial({
+                color: accent,
+                transparent: true,
+                opacity: 0.035,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+              }),
+            ),
+          );
+        }
       }
     }
   } else if (o.kind === "marker" || o.kind === "rigidBody") {
@@ -223,8 +270,14 @@ export function makeSceneObject(
     const mesh = new THREE.Mesh(
       geo,
       material(
-        selected ? "#c39c65" : o.kind === "surface" ? "#c1cdd0" : "#8b9fa8",
-        o.kind === "surface" ? 0.4 : 0.72,
+        selected
+          ? "#c39c65"
+          : o.kind === "tube"
+            ? "#b9c5ca"
+            : o.kind === "surface"
+              ? "#c1cdd0"
+              : "#8b9fa8",
+        o.kind === "tube" ? 1 : o.kind === "surface" ? 0.4 : 0.72,
       ),
     );
     mesh.castShadow = true;

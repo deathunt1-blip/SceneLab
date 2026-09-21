@@ -26,6 +26,9 @@ export function AnalysisPanel() {
       </div>
       <div className="inspector-content">
         <p className="small muted">{t("pointHint")}</p>
+        {s.objects.some((o) => o.camera_model_snapshot?.stereo) && (
+          <p className="tiny muted">{t("stereoCountNote")}</p>
+        )}
         <div className="xyz-inputs">
           {point.map((v, i) => (
             <Num
@@ -83,24 +86,28 @@ export function AnalysisPanel() {
         <div className="observations">
           {data.observations.map((obs) => {
             const c = s.objects.find((c) => c.id === obs.cameraId)!;
+            const observationId = `${c.id}:${obs.eye ?? "mono"}`;
             return (
               <div
                 className={"observation " + (obs.valid ? "valid" : "invalid")}
-                key={c.id}
+                key={observationId}
               >
                 <button
                   className="observation-head"
                   onClick={() => {
-                    setExpanded(expanded === c.id ? null : c.id);
+                    setExpanded(expanded === observationId ? null : observationId);
                     st.set({ point });
                   }}
                 >
                   <span className="status-dot" />
-                  <strong>{c.name}</strong>
+                  <strong>
+                    {c.name}
+                    {obs.eye ? ` · ${t(obs.eye + "Eye")}` : ""}
+                  </strong>
                   <span>{obs.valid ? t("valid") : t(obs.reasons[0])}</span>
                   <ChevronDown size={13} />
                 </button>
-                {expanded === c.id && (
+                {expanded === observationId && (
                   <div className="observation-body">
                     {!obs.valid && (
                       <div className="failure-tags">
@@ -137,7 +144,7 @@ export function AnalysisPanel() {
                         {s.objects.find((o) => o.id === obs.occluderId)?.name}
                       </button>
                     )}
-                    <CameraPreview cameraId={c.id} />
+                    <CameraPreview cameraId={c.id} eye={obs.eye} />
                   </div>
                 )}
               </div>

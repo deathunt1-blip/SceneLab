@@ -1,7 +1,16 @@
 export type Vec3 = [number, number, number];
 export type Language = "zh" | "en";
 export type ObjectKind =
-  "camera" | "box" | "cylinder" | "wall" | "marker" | "rigidBody" | "truss" | "surface";
+  | "camera"
+  | "box"
+  | "cylinder"
+  | "wall"
+  | "marker"
+  | "rigidBody"
+  | "truss"
+  | "tube"
+  | "surface";
+export type CameraEye = "left" | "right";
 export interface CameraModel {
   id: string;
   manufacturer: string;
@@ -30,6 +39,8 @@ export interface CameraModel {
   layout_supported?: boolean;
   enabled_for_layout_default?: boolean;
   range_mode?: "passive" | "active" | "general";
+  stereo?: { baseline_mm: number };
+  housing_mm?: Vec3;
   catalog?: {
     dataset: string;
     filename: string;
@@ -81,6 +92,8 @@ export interface Project {
 export type Failure = "behind" | "fov" | "close" | "far" | "occluded" | "small" | "edge";
 export interface Observation {
   cameraId: string;
+  eye?: CameraEye;
+  cameraPosition?: Vec3;
   valid: boolean;
   reasons: Failure[];
   distance: number;
