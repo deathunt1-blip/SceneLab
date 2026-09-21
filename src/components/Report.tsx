@@ -6,16 +6,18 @@ import { fmt } from "./Common";
 import type { CameraEye, Language } from "../models";
 import { viewCount } from "../simulation/engine";
 import { ReportCameraImage } from "./CameraImage";
-export interface ReportImage {
-  manual?: boolean;
-  data: string;
-  view: string;
-  layer: string;
-  revision: number;
-  schemeId: string;
-  clip: number;
-}
-export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => void }) {
+import type { ReportImage } from "../reportPackage/types";
+import { ReportPackageButton } from "../reportPackage/ReportPackageButton";
+export type { ReportImage } from "../reportPackage/types";
+export function Report({
+  images,
+  onRun,
+  onRefresh,
+}: {
+  images: ReportImage[];
+  onRun: () => void;
+  onRefresh: () => void;
+}) {
   const st = useStore(),
     ui = useT(),
     s = activeScheme(st),
@@ -58,6 +60,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
             <option value="zh">中文</option>
             <option value="en">English</option>
           </select>
+          <ReportPackageButton images={images} onRefresh={onRefresh} />
           <button className="primary" disabled={!current} onClick={() => window.print()}>
             <Printer size={16} />
             {ui("printPDF")}
@@ -384,7 +387,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.2{" "}
+              SCENELAB v1.3{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

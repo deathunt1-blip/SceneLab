@@ -15,7 +15,7 @@ const port = profile ? Number(process.env.SCENELAB_PORT || 5179) : 5178;
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error("Invalid local port");
 const openGuide = () => shell.openPath(app.isPackaged
   ? path.join(path.dirname(app.getPath("exe")), "使用说明.pdf")
-  : path.resolve(__dirname, "../output/pdf/SceneLab_v1.2_使用说明.pdf"));
+  : path.resolve(__dirname, "../output/pdf/SceneLab_v1.3_使用说明.pdf"));
 const ownsInstance = app.requestSingleInstanceLock();
 if (!ownsInstance) app.quit();
 app.on("second-instance", () => {
@@ -31,7 +31,7 @@ if (ownsInstance)
       { label: "帮助", submenu: [
         { label: "使用说明", accelerator: "F1", click: openGuide },
         { label: "关于SceneLab", click: () => require("electron").dialog.showMessageBox(mainWindow, {
-          type: "info", title: "SceneLab", message: "SceneLab v1.2",
+          type: "info", title: "SceneLab", message: "SceneLab v1.3",
           detail: "光学动捕相机部署与理论精度仿真工作台\n使用说明：F1\n理论仿真结果需结合现场标定与实测验证。",
         }) },
       ] },
@@ -87,7 +87,7 @@ if (ownsInstance)
         height: 980,
         minWidth: 1080,
         minHeight: 720,
-        title: "SceneLab v1.2",
+        title: "SceneLab v1.3",
         icon: path.join(__dirname, "icon.png"),
         backgroundColor: "#172b30",
         autoHideMenuBar: true,

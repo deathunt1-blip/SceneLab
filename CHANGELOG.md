@@ -1,5 +1,12 @@
 # 更新记录
 
+## [1.3.0] - 2026-09-22
+
+- 新增本机技术报告包导出：manifest、当前方案、分析摘要及六张核心 PNG，格式版本独立为 1.0。
+- 可选逐相机二维视图、双目左右目和 Marker 像素数据；内部诊断默认关闭。
+- 导出前后检查分析版本与截图一致性；支持取消，过期结果与缺失图片不生成正式包。
+- 保留现有仿真算法、相机库、项目存储和 PDF 打印；附格式文档及 12 页中文说明书。
+
 ## [1.2.0] - 2026-09-22
 
 - 左侧 Shift 连选、Ctrl 增减及按类型全选，覆盖已分组的对象。
@@ -36,6 +43,7 @@
 
 已知边界：结果为理论位置 RMS；成像为几何仿真，未模拟曝光等光学过程。本版未数字签名，没有自动升级或账号同步。完整边界见 README 和使用说明。
 
+[1.3.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0
 [1.2.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.2.0
 [1.1.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.1.0
 [1.0.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.0.0

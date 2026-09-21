@@ -1,5 +1,28 @@
 import { useStore } from "./store";
 const zh = {
+  exportReportPackage: "导出技术报告包",
+  packageSubtitle: "导出工程数据与图片，供其他软件读取",
+  packageNoAnalysis: "当前方案尚未运行分析。请先运行分析后再导出技术报告包。",
+  packageStale:
+    "当前部署已发生修改，现有分析结果已过期。请重新运行分析后再导出技术报告包。",
+  packageImagesMissing: "当前分析对应的报告图片尚未就绪，请重新生成图片后导出。",
+  packageInvalidImage: "报告图片生成失败，请重新生成图片后再试。",
+  packageCameraMissing: "相机缺少完整参数快照，请检查相机配置。",
+  packageExportFailed: "报告包导出失败，请重试；相机较多时可关闭二维视图选项。",
+  packageAnalysisValid: "当前分析结果有效",
+  packageEnabledCameras: "台启用相机",
+  packageImagesReady: "部署 / 覆盖 / 精度核心图片已就绪",
+  packageRefreshImages: "重新生成报告图片",
+  packageExtras: "附加内容",
+  packageCameraViews: "包含各相机二维成像视图",
+  packageCameraViewsHint:
+    "双目分别导出左 / 右目。图片为报告概览，像素坐标与投影尺寸单独保存在数据中。",
+  packageDiagnostics: "包含内部诊断信息",
+  packageDiagnosticsHint: "仅建议内部技术评审使用",
+  packageContentsHint:
+    "包含当前方案、分析摘要与 PNG 图片；不包含 PDF 或完整体素数组。此报告包不能替代项目备份。",
+  packageExporting: "正在生成报告包…",
+  packageExported: "报告包已生成并开始下载。",
   quickSelect: "快速选择",
   selectAll: "全选",
   selectAllObjects: "全选所有对象（Ctrl+A）",
@@ -370,7 +393,7 @@ const zh = {
   replace: "替换",
   newProjectConfirm: "创建空白项目",
   resetDemo: "打开演示项目",
-  appVersion: "SceneLab v1.2",
+  appVersion: "SceneLab v1.3",
   deleteModelHint: "删除型号不会影响现有项目的参数快照。",
   cameraPreviewNote:
     "采用相同内参投影。Marker 符号放大便于查看，遮挡点以红色显示；诊断数值使用实际像素直径。",
@@ -388,6 +411,34 @@ const zh = {
   minCameraNote: "至少 2 个有效视点且几何非退化时才输出精度。",
 };
 const en: Record<keyof typeof zh, string> = {
+  exportReportPackage: "Export report package",
+  packageSubtitle: "Export engineering data and images for other software",
+  packageNoAnalysis:
+    "This scheme has not been analyzed. Run analysis before exporting a report package.",
+  packageStale:
+    "The deployment has changed and the analysis is stale. Run analysis again before exporting.",
+  packageImagesMissing:
+    "Report images for the current analysis are not ready. Regenerate them before exporting.",
+  packageInvalidImage:
+    "A report image could not be generated. Regenerate the images and try again.",
+  packageCameraMissing:
+    "A camera is missing its full parameter snapshot. Check its configuration.",
+  packageExportFailed:
+    "Report package export failed. Try again, or omit camera views for a large scene.",
+  packageAnalysisValid: "Current analysis is valid",
+  packageEnabledCameras: "enabled cameras",
+  packageImagesReady: "Deployment / coverage / accuracy images are ready",
+  packageRefreshImages: "Regenerate report images",
+  packageExtras: "Optional content",
+  packageCameraViews: "Include individual camera image views",
+  packageCameraViewsHint:
+    "Stereo exports both eyes. Images are report overviews; sensor pixel coordinates and projected sizes are exported separately.",
+  packageDiagnostics: "Include internal diagnostics",
+  packageDiagnosticsHint: "Recommended for internal technical review only",
+  packageContentsHint:
+    "Includes the current scheme, analysis summary and PNG images, without PDF or full voxel arrays. This package does not replace a project backup.",
+  packageExporting: "Creating report package…",
+  packageExported: "Report package created and download started.",
   quickSelect: "Quick selection",
   selectAll: "Select all",
   selectAllObjects: "Select all objects (Ctrl+A)",
@@ -773,7 +824,7 @@ const en: Record<keyof typeof zh, string> = {
   replace: "Replace",
   newProjectConfirm: "Create empty project",
   resetDemo: "Open demo project",
-  appVersion: "SceneLab v1.2",
+  appVersion: "SceneLab v1.3",
   deleteModelHint: "Deleting a model does not affect existing project snapshots.",
   cameraPreviewNote:
     "Uses the same intrinsics. Marker symbols are enlarged for visibility; occluded points appear red. Diagnostics use actual pixel diameters.",

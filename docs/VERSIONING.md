@@ -27,7 +27,7 @@
 
 3. 使用装有 ReportLab、Pillow 的 Python 运行 `scripts/create-release-assets.py`。它使用 Windows 微软雅黑字体生成图标和 PDF；原始 Excel 重导入另需 openpyxl。
 4. 运行 `npm run package:win`，检查安装版与免安装版。查看新版 PDF 全部页面，确认图表和文字完整。
-5. 更新并运行 `scripts/finalize-release.cjs`，整理附件并生成 SHA-256 校验文件。此脚本、文档生成脚本和打包配置目前针对 1.2.0 命名，新版本需一起更新。
+5. 更新并运行 `scripts/finalize-release.cjs`，整理附件并生成 SHA-256 校验文件。此脚本、文档生成脚本和打包配置目前针对 1.3.0 命名，新版本需一起更新。
 6. 提交最终内容，创建附注标签并推送。以该标签创建 GitHub Release，上传上述附件。
 7. 核对远端标签对应的提交、附件大小及校验和。向同事发送 Release 链接。
 
