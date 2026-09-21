@@ -384,7 +384,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.1{" "}
+              SCENELAB v1.2{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

@@ -78,6 +78,7 @@ export interface Scheme {
   name: string;
   boundary: Vec3;
   objects: SceneObject[];
+  groups?: { id: string; name: string }[];
   settings: Settings;
   revision: number;
 }

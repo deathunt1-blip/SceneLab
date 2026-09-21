@@ -202,6 +202,20 @@ export function validateProject(p: Project): void {
     )
       throw new Error("invalidFile");
     ids.add(s.id);
+    if (
+      s.groups !== undefined &&
+      (!Array.isArray(s.groups) ||
+        new Set(s.groups.map((g) => g?.id)).size !== s.groups.length ||
+        s.groups.some(
+          (g) =>
+            !g ||
+            typeof g.id !== "string" ||
+            !g.id ||
+            typeof g.name !== "string" ||
+            !g.name.trim(),
+        ))
+    )
+      throw new Error("invalidFile");
     const objectIds = new Set();
     for (const o of s.objects) {
       if (
@@ -229,6 +243,8 @@ export function validateProject(p: Project): void {
       )
         throw new Error("invalidFile");
       objectIds.add(o.id);
+      if (o.group !== undefined && (typeof o.group !== "string" || !o.group))
+        throw new Error("invalidFile");
       if (
         o.kind === "camera" &&
         (!o.camera_model_snapshot || validateModel(o.camera_model_snapshot).length)

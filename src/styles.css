@@ -582,6 +582,31 @@ h4 {
 .tree-row.active .tree-visibility {
   opacity: 1;
 }
+
+.tree-selection-tools { display: flex; gap: 5px; padding: 8px 14px 0; }
+.tree-selection-tools button { flex: 1; padding: 5px; font-size: 10px; gap: 4px; }
+.tree-selection-hint { padding: 8px 14px 0; color: #8a9b99; font-size: 9px; margin: 0; }
+.tree-category-header, .tree-folder-header { display: flex; align-items: center; min-width: 0; }
+.tree-category-header .tree-group-title { min-width: 0; flex: 1; }
+.tree-category-select, .tree-folder-toggle { border: 0; background: transparent; padding: 5px; color: #73958a; }
+.tree-folder-header { border-radius: 4px; background: #f1f5f3; }
+.tree-folder-header.active { background: #e4f0eb; color: #19785f; }
+.tree-folder-name { min-width: 0; flex: 1; border: 0; background: transparent; justify-content: flex-start; gap: 6px; padding: 7px 5px; font-size: 11px; }
+.tree-folder-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-folder-name small { margin-left: auto; color: #8a9b99; }
+.tree-folder-name svg { flex-shrink: 0; }
+.scene-context-menu { position: fixed; z-index: 150; width: 294px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto; padding: 7px; border: 1px solid #d5e0dc; border-radius: 9px; background: #fff; box-shadow: 0 12px 40px #203d4338; }
+.scene-context-menu button { display: flex; width: 100%; justify-content: flex-start; gap: 9px; padding: 7px 9px; border: 0; border-radius: 4px; background: none; text-align: left; font-size: 11px; }
+.scene-context-menu button:hover:not(:disabled), .scene-context-menu button:focus-visible { background: #eaf3ee; }
+.scene-context-menu button.danger { color: #b66353; }
+.scene-context-menu button:disabled { opacity: .4; }
+.scene-context-menu kbd, .scene-context-menu small { margin-left: auto; color: #92a39e; font-size: 10px; }
+.scene-context-menu hr { border: 0; border-top: 1px solid #e5ece8; margin: 5px 0; }
+.context-selection-count, .context-help { color: #899b92; font-size: 10px; padding: 5px 9px; }
+.context-help { line-height: 1.5; margin: 0; }
+.group-dialog { padding: 24px; min-width: 300px; }
+.group-dialog .button-row { justify-content: flex-end; margin-top: 20px; }
+
 .object-library {
   padding: 13px 13px 12px;
   border-top: 1px solid var(--line);

@@ -12,12 +12,8 @@ import {
   ChevronDown,
   ChevronRight,
   Circle,
-  CircleDot,
   Copy,
   ClipboardPaste,
-  Cuboid,
-  Eye,
-  EyeOff,
   FilePlus2,
   FileText,
   Focus,
@@ -26,7 +22,6 @@ import {
   Grid2X2,
   Layers,
   LoaderCircle,
-  LockKeyhole,
   Maximize,
   MousePointer2,
   Move3D,
@@ -39,210 +34,27 @@ import {
   Save,
   Scan,
   Settings2,
-  Square,
   Undo2,
   X,
 } from "lucide-react";
 import { activeScheme, useStore } from "./store";
 import { useT } from "./i18n";
 import { download } from "./camera/repository";
-import { makeCamera, makeObject, makeProject } from "./project/data";
+import { makeProject } from "./project/data";
 import { add, rotate } from "./simulation/math";
 import { useSimulation } from "./simulation/useSimulation";
 import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
 import { viewCount } from "./simulation/engine";
 import { Inspector } from "./components/Inspector";
-import { AnalysisPanel, Issues } from "./components/AnalysisPanel";
+import { AnalysisPanel } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
 import { ArrayDialog } from "./components/ArrayDialog";
 import { Report, type ReportImage } from "./components/Report";
 import { fmt } from "./components/Common";
-import type { ObjectKind, Vec3 } from "./models";
+import type { Vec3 } from "./models";
+import { SceneTree } from "./components/SceneTree";
 import "./styles.css";
-const icons = {
-  camera: Camera,
-  box: Box,
-  cylinder: Cuboid,
-  wall: Square,
-  marker: CircleDot,
-  rigidBody: Layers,
-  truss: Frame,
-  tube: Cuboid,
-  surface: Square,
-};
-function SceneTree() {
-  const st = useStore(),
-    t = useT(),
-    s = activeScheme(st);
-  const [closed, setClosed] = useState<string[]>([]);
-  const groups = [
-    ["structures", ["truss", "tube", "surface"]],
-    ["obstacles", ["box", "cylinder", "wall"]],
-    ["cameras", ["camera"]],
-    ["markers", ["marker"]],
-    ["rigidBodies", ["rigidBody"]],
-  ] as const;
-  const addObject = (kind: ObjectKind) => {
-    let obj = makeObject(kind, s.objects.filter((o) => o.kind === kind).length + 1);
-    if (kind === "camera") {
-      if (!st.models.length) {
-        st.set({ libraryOpen: true, toast: "noModels" });
-        return;
-      }
-      obj = makeCamera(
-        st.models[0],
-        [0, -s.boundary[1] / 2, 3],
-        [0, 0, 1.2],
-        s.objects.filter((o) => o.kind === "camera").length + 1,
-      );
-    }
-    if (kind === "truss" || kind === "tube")
-      obj.position = [0, 0, Math.min(3.6, s.boundary[2])];
-    if (kind === "surface") obj.position = [0, 0, s.boundary[2]];
-    if (kind === "marker") {
-      obj.position = [0, 0, s.boundary[2] / 2];
-      obj.diameter = s.settings.markerDiameter;
-    }
-    if (kind === "rigidBody") {
-      obj.position = [0, 0, s.boundary[2] / 2];
-      obj.markers = [
-        { position: [-0.15, -0.1, 0], diameter: s.settings.markerDiameter },
-        { position: [0.16, -0.08, 0], diameter: s.settings.markerDiameter },
-        { position: [0, 0.18, 0], diameter: s.settings.markerDiameter },
-        { position: [0, 0, 0.2], diameter: s.settings.markerDiameter },
-      ];
-    }
-    st.edit((s) => {
-      s.objects.push(obj);
-    });
-    st.set({ selected: [obj.id], mode: "design" });
-  };
-  return (
-    <aside className="left-panel">
-      <div className="panel-heading">
-        <h3>
-          <Layers size={16} />
-          {t("sceneTree")}
-        </h3>
-        <span className="count-pill">{s.objects.length}</span>
-      </div>
-      <div className="scene-tree">
-        <button
-          className={
-            "tree-boundary " +
-            (!st.selected.length && st.mode === "design" ? "active" : "")
-          }
-          onClick={() => st.set({ selected: [], mode: "design" })}
-        >
-          <Scan size={16} />
-          <span>{t("boundary")}</span>
-          <small>{s.boundary.join("×")}</small>
-        </button>
-        {groups.map(([key, kinds]) => {
-          const objects = s.objects.filter((o) =>
-            (kinds as readonly string[]).includes(o.kind),
-          );
-          return (
-            <div className="tree-group" key={key}>
-              <button
-                className="tree-group-title"
-                onClick={() =>
-                  setClosed(
-                    closed.includes(key)
-                      ? closed.filter((k) => k !== key)
-                      : [...closed, key],
-                  )
-                }
-              >
-                {closed.includes(key) ? (
-                  <ChevronRight size={13} />
-                ) : (
-                  <ChevronDown size={13} />
-                )}
-                <span>{t(key)}</span>
-                <small>{objects.length.toString().padStart(2, "0")}</small>
-              </button>
-              {!closed.includes(key) &&
-                objects.map((o) => {
-                  const Icon = icons[o.kind];
-                  return (
-                    <div
-                      className={
-                        "tree-row " +
-                        (st.selected.includes(o.id) ? "active " : "") +
-                        (!o.enabled ? "disabled" : "")
-                      }
-                      key={o.id}
-                    >
-                      <button
-                        className="tree-object"
-                        aria-pressed={st.selected.includes(o.id)}
-                        onClick={(e) =>
-                          st.select(o.id, e.shiftKey || e.ctrlKey || e.metaKey)
-                        }
-                        onDoubleClick={() => st.set({ focusTick: st.focusTick + 1 })}
-                      >
-                        <Icon size={14} />
-                        <span>{o.name}</span>
-                        {o.locked && <LockKeyhole size={11} />}
-                      </button>
-                      <button
-                        className="tree-visibility"
-                        aria-label={`${t("visible")} ${o.name}`}
-                        onClick={() => st.updateObjects([o.id], { visible: !o.visible })}
-                      >
-                        {o.visible ? <Eye size={12} /> : <EyeOff size={12} />}
-                      </button>
-                    </div>
-                  );
-                })}
-            </div>
-          );
-        })}
-      </div>
-      <div className="object-library">
-        <div className="section-label">
-          <span>{t("objectLibrary")}</span>
-          <Plus size={13} />
-        </div>
-        <div className="add-grid">
-          {(
-            [
-              "camera",
-              "box",
-              "cylinder",
-              "wall",
-              "truss",
-              "tube",
-              "surface",
-              "marker",
-              "rigidBody",
-            ] as ObjectKind[]
-          ).map((kind) => {
-            const Icon = icons[kind];
-            return (
-              <button
-                key={kind}
-                title={kind === "rigidBody" ? t("rigidBodyPreset") : t(kind)}
-                onClick={() => addObject(kind)}
-              >
-                <Icon size={18} />
-                <span>{t(kind)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <Issues />
-      <div className="left-footer">
-        <span className="status-dot" />
-        {t("local")}
-        <span>v1.1</span>
-      </div>
-    </aside>
-  );
-}
 export default function App() {
   const st = useStore(),
     t = useT(),

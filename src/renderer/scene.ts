@@ -161,6 +161,7 @@ export function makeSceneObject(
         ? [-stereo.baseline_mm / 2000, stereo.baseline_mm / 2000]
         : [0]) {
         const frustum = new THREE.Group();
+        frustum.userData.noPick = true;
         frustum.position.x = offset;
         group.add(frustum);
         const m = o.camera_model_snapshot,
