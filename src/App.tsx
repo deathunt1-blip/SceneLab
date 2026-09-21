@@ -54,6 +54,7 @@ import { Report, type ReportImage } from "./components/Report";
 import { fmt } from "./components/Common";
 import type { Vec3 } from "./models";
 import { SceneTree } from "./components/SceneTree";
+import { ReportPackageError } from "./reportPackage/validation";
 import "./styles.css";
 export default function App() {
   const st = useStore(),
@@ -82,12 +83,19 @@ export default function App() {
       data: captureViewport(),
       view: state.view,
       layer: state.layer,
+      analysisTimestamp: state.result?.timestamp,
       clip: state.clip,
-      revision: activeScheme(state).revision,
+      revision:
+        state.layer === "none" ||
+        (state.result?.schemeId === state.project.activeSchemeId &&
+          state.result.revision === activeScheme(state).revision)
+          ? activeScheme(state).revision
+          : -1,
       schemeId: state.project.activeSchemeId,
     };
   };
   const openReport = async () => {
+    if (capturing) return;
     if (!current) {
       st.set({ mode: "report" });
       return;
@@ -106,33 +114,43 @@ export default function App() {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
     const next: ReportImage[] = [];
-    for (const [view, layer] of [
-      ["perspective", "none"],
-      ["top", "coverage"],
-      ["perspective", "coverage"],
-      ["perspective", "accuracy"],
-      ["front", "accuracy"],
-      ["side", "accuracy"],
-    ] as const) {
+    try {
+      for (const [view, layer] of [
+        ["perspective", "none"],
+        ["top", "coverage"],
+        ["perspective", "coverage"],
+        ["perspective", "accuracy"],
+        ["front", "accuracy"],
+        ["side", "accuracy"],
+      ] as const) {
+        useStore.getState().set({
+          mode: "analysis",
+          selected: [],
+          point: null,
+          view,
+          layer,
+          clip: layer === "none" ? s.boundary[2] : Math.min(st.clip, s.boundary[2]),
+        });
+        await frames();
+        const latest = useStore.getState();
+        if (activeScheme(latest) !== s || latest.result !== r)
+          throw new ReportPackageError("packageStale");
+        next.push(shot());
+      }
+      setImages([
+        ...next,
+        ...images.filter(
+          (i) => i.manual && i.schemeId === s.id && i.revision === s.revision,
+        ),
+      ]);
+    } catch (error) {
       useStore.getState().set({
-        mode: "analysis",
-        selected: [],
-        point: null,
-        view,
-        layer,
-        clip: layer === "none" ? s.boundary[2] : Math.min(st.clip, s.boundary[2]),
+        toast: error instanceof ReportPackageError ? error.code : "packageInvalidImage",
       });
-      await frames();
-      next.push(shot());
+    } finally {
+      useStore.getState().set({ ...previous, mode: "report" });
+      setCapturing(false);
     }
-    setImages([
-      ...next,
-      ...images.filter(
-        (i) => i.manual && i.schemeId === s.id && i.revision === s.revision,
-      ),
-    ]);
-    useStore.getState().set({ ...previous, mode: "report" });
-    setCapturing(false);
   };
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -357,7 +375,7 @@ export default function App() {
         </div>
       </div>
       {st.mode === "report" ? (
-        <Report images={images} onRun={() => run()} />
+        <Report images={images} onRun={() => run()} onRefresh={() => void openReport()} />
       ) : (
         <>
           <div className="toolbar">
@@ -744,7 +762,12 @@ export default function App() {
         </div>
       )}
       {capturing && (
-        <div className="capture-overlay">
+        <div
+          className="capture-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("reportViews")}
+        >
           <LoaderCircle size={24} className="spin" />
           {t("reportViews")}
         </div>

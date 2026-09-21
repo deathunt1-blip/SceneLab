@@ -2,14 +2,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const root = path.resolve(__dirname, "..");
-const target = path.join(root, "release/SceneLab-v1.2");
+const target = path.join(root, "release/SceneLab-v1.3");
 fs.mkdirSync(target, { recursive: true });
 const files = [
-  ["release/build/SceneLab-1.2.0-Windows-x64.zip", "SceneLab-1.2.0-Windows-x64.zip"],
-  ["release/build/SceneLab-1.2.0-Setup-x64.exe", "SceneLab-1.2.0-Setup-x64.exe"],
-  ["output/pdf/SceneLab_v1.2_使用说明.pdf", "SceneLab_v1.2_使用说明.pdf"],
+  ["release/build/SceneLab-1.3.0-Windows-x64.zip", "SceneLab-1.3.0-Windows-x64.zip"],
+  ["release/build/SceneLab-1.3.0-Setup-x64.exe", "SceneLab-1.3.0-Setup-x64.exe"],
+  ["output/pdf/SceneLab_v1.3_使用说明.pdf", "SceneLab_v1.3_使用说明.pdf"],
   ["docs/先读我.txt", "先读我.txt"],
-  ["docs/v1.2-更新说明.txt", "v1.2-更新说明.txt"],
+  ["docs/v1.3-更新说明.txt", "v1.3-更新说明.txt"],
 ];
 const sums = [];
 for (const [source, name] of files) {

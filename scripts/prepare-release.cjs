@@ -13,19 +13,26 @@ fs.writeFileSync(path.join(staging, "package.json"), JSON.stringify({
   main: "electron/main.cjs", author: "SceneLab", private: true,
 }, null, 2));
 const packages = ["react", "react-dom", "scheduler", "three", "zustand", "lucide-react",
-  "@fontsource/dm-sans", "@fontsource/ibm-plex-mono"];
-let notices = "SceneLab v1.2 - Third-party notices\n\nElectron and Chromium licenses are provided separately in this folder.\n\n";
+  "@fontsource/dm-sans", "@fontsource/ibm-plex-mono", "jszip", "pako", "lie", "immediate", "setimmediate", "readable-stream", "safe-buffer", "string_decoder", "inherits", "util-deprecate", "isarray", "core-util-is", "process-nextick-args"];
+let notices = "SceneLab v1.3 - Third-party notices\n\nElectron and Chromium licenses are provided separately in this folder.\nJSZip is used under its MIT license option.\n\n";
 for (const name of packages) {
   const dir = path.join(root, "node_modules", name);
   const info = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
   const licenses = fs.readdirSync(dir).filter(f => /^(license|ofl|copying)/i.test(f));
-  if (!licenses.length) throw new Error(`Missing license: ${name}`);
   notices += `\n${"=".repeat(72)}\n${name} ${info.version}\n${"=".repeat(72)}\n`;
+  if (!licenses.length && name === "isarray") {
+    const readme = fs.readFileSync(path.join(dir, "README.md"), "utf8");
+    const start = readme.indexOf("## License");
+    if (start < 0) throw new Error("Missing isarray license in README");
+    notices += readme.slice(start) + "\n";
+    continue;
+  }
+  if (!licenses.length) throw new Error(`Missing license: ${name}`);
   for (const file of licenses) notices += fs.readFileSync(path.join(dir, file), "utf8") + "\n";
 }
 fs.mkdirSync(path.join(root, "build/resources"), { recursive: true });
 fs.writeFileSync(path.join(root, "build/resources/THIRD-PARTY-NOTICES.txt"), notices);
-for (const file of ["output/pdf/SceneLab_v1.2_使用说明.pdf", "build/resources/icon.ico"]) {
+for (const file of ["output/pdf/SceneLab_v1.3_使用说明.pdf", "build/resources/icon.ico"]) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Required release asset missing: ${file}`);
 }
 console.log(`Prepared SceneLab ${pkg.version}; application contains compiled UI and desktop host only.`);

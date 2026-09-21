@@ -1,12 +1,12 @@
-# SceneLab v1.2
+# SceneLab v1.3
 
-光学动捕相机部署与理论精度仿真工作台，当前发布版本为 **v1.2（1.2.0）**。提供 Windows x64 安装版和免安装版，附中文 PDF 使用说明。此版本对应当前已实现功能，不代表原始 PRD 全部条目的最终验收。
+光学动捕相机部署与理论精度仿真工作台，当前发布版本为 **v1.3（1.3.0）**。提供 Windows x64 安装版和免安装版，附中文 PDF 使用说明。此版本对应当前已实现功能，不代表原始 PRD 全部条目的最终验收。
 
-[下载 v1.2.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.2.0) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
+[下载 v1.3.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
 
-发布文件位于 `release/SceneLab-v1.2/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
+发布文件位于 `release/SceneLab-v1.3/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
 
 安装版与免安装版都使用当前用户的 `%APPDATA%\\Camera Planner`，以兼容已有项目。免安装是无需安装，不表示数据随程序目录移动。分享项目和自定义相机库时，分别导出项目文件与参数库 JSON。发布包不包含本机用户数据。
 
@@ -55,6 +55,12 @@ npm run dev
 - 新建或编辑后，点击底部固定的「保存型号」。保存状态在弹窗内显示；存储失败时保留草稿并提示导出备份。
 
 ## 已实现
+
+### v1.3 技术报告包
+
+技术报告页新增「导出技术报告包」，与 PDF 打印并列。输出 `.scenelab-report` ZIP，默认包含 `manifest.json`、当前方案 `project.json`、`analysis.json` 摘要，以及部署、覆盖、精度六张 PNG；不包含 PDF、完整体素数组或其他方案。自定义相机和双目完整参数快照随包保存，不依赖官方产品 ID。
+
+可选导出各相机二维视图和内部诊断，默认均关闭。双目分别输出左右目；图片复用报告概览，原始传感器像素坐标和 Marker 投影尺寸写入 `camera_views/index.json`。导出前后校验方案版本与分析一致性，缺失或过期结果禁止下载。格式 `1.0` 独立于软件版本，详见 [报告包格式说明](docs/REPORT_PACKAGE_FORMAT.md)。
 
 ### v1.2 多选、分组与准确拾取
 
