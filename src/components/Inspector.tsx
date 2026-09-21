@@ -213,13 +213,18 @@ export function Inspector() {
                 onChange={(e) => {
                   const m = st.models.find((m) => m.id === e.target.value);
                   if (m)
-                    update({
-                      camera_model_id: m.id,
-                      camera_model_snapshot: structuredClone(m),
-                      enabled:
-                        m.layout_supported !== false &&
-                        m.enabled_for_layout_default !== false,
-                    });
+                    st.updateObjects(
+                      selected
+                        .filter((item) => item.kind === "camera")
+                        .map((item) => item.id),
+                      {
+                        camera_model_id: m.id,
+                        camera_model_snapshot: structuredClone(m),
+                        enabled:
+                          m.layout_supported !== false &&
+                          m.enabled_for_layout_default !== false,
+                      },
+                    );
                 }}
               >
                 <option value={o.camera_model_id}>
@@ -235,14 +240,7 @@ export function Inspector() {
             {changed && (
               <div className="notice small">
                 {t("modelChanged")}
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    update({
-                      camera_model_snapshot: structuredClone(libraryModel),
-                    })
-                  }
-                >
+                <button className="text-button" onClick={st.updateCameraSnapshots}>
                   {t("updateSnapshot")}
                 </button>
               </div>
@@ -276,7 +274,10 @@ export function Inspector() {
               onClick={() =>
                 st.edit((s) => {
                   s.objects
-                    .filter((c) => st.selected.includes(c.id) && !c.locked)
+                    .filter(
+                      (c) =>
+                        c.kind === "camera" && st.selected.includes(c.id) && !c.locked,
+                    )
                     .forEach(
                       (c) =>
                         (c.rotation = lookAt(c.position, [0, 0, s.boundary[2] * 0.3])),
@@ -296,7 +297,8 @@ export function Inspector() {
                   }
                   st.edit((s) => {
                     for (const c of s.objects.filter(
-                      (o) => o.kind === "camera" && st.selected.includes(o.id) && !o.locked,
+                      (o) =>
+                        o.kind === "camera" && st.selected.includes(o.id) && !o.locked,
                     )) {
                       const nearest = nearestMount(s.objects, c.position);
                       if (nearest) {
@@ -334,7 +336,7 @@ export function Inspector() {
             )}
             {selected.length > 1 && (
               <div className="button-row">
-                <button onClick={() => update({ group: uid() })}>
+                <button onClick={() => st.groupSelection(t("group"))}>
                   {t("createGroup")}
                 </button>
                 <button

@@ -16,6 +16,7 @@ import type { SceneObject, Vec3 } from "../models";
 import { analyzePoint, worldMarkers, viewCount } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
 import { buildHeatmapCells } from "./heatmap";
+import { pickSceneObjects, pickCandidate, pickableMeshes } from "./picking";
 type Runtime = {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
@@ -145,10 +146,10 @@ export function Viewport() {
         const st = useStore.getState(),
           s = activeScheme(st);
         const obj = s.objects.find((o) => o.id === st.selected[0]);
-        const target = obj
+        let target = obj
           ? new THREE.Vector3(...obj.position)
           : new THREE.Vector3(0, 0, s.boundary[2] * 0.3);
-        const extent =
+        let extent =
           obj?.kind === "marker"
             ? (obj.diameter || 12) / 1000
             : obj?.kind === "rigidBody"
@@ -163,6 +164,22 @@ export function Viewport() {
                 : obj
                   ? Math.max(...obj.size)
                   : Math.max(...s.boundary);
+        if (st.selected.length > 1) {
+          const bounds = new THREE.Box3();
+          for (const mesh of pickableMeshes(
+            st.selected.flatMap((id) => rt.objects.get(id) ?? []),
+          )) {
+            mesh.geometry.computeBoundingBox();
+            if (mesh.geometry.boundingBox)
+              bounds.union(
+                mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld),
+              );
+          }
+          if (!bounds.isEmpty()) {
+            target = bounds.getCenter(new THREE.Vector3());
+            extent = Math.max(0.1, ...bounds.getSize(new THREE.Vector3()).toArray());
+          }
+        }
         const delta = rt.camera.position
           .clone()
           .sub(rt.controls.target)
@@ -204,8 +221,15 @@ export function Viewport() {
       if (transform.dragging) useStore.getState().set({ livePose: transformed() });
     });
     transform.addEventListener("mouseUp", () => {
-      const poses = transformed(),
-        st = useStore.getState();
+      const st = useStore.getState();
+      const poses = Object.fromEntries(
+        Object.entries(transformed()).filter(([id, pose]) => {
+          const source = activeScheme(st).objects.find((o) => o.id === id)!;
+          return (["position", "rotation", "size"] as const).some((key) =>
+            pose[key]?.some((value, i) => Math.abs(value - source[key][i]) > 1e-7),
+          );
+        }),
+      );
       if (Object.keys(poses).length)
         st.edit((s) => {
           s.objects = s.objects.map((o) => (poses[o.id] ? { ...o, ...poses[o.id] } : o));
@@ -216,6 +240,8 @@ export function Viewport() {
       ray = new THREE.Raycaster();
     let start = [0, 0];
     const down = (e: PointerEvent) => {
+      // Alt chooses through overlaps; do not start a transform from its gizmo.
+      if (e.altKey && e.button === 0) e.stopPropagation();
       el.focus({ preventScroll: true });
       start = [e.clientX, e.clientY];
       dragged = false;
@@ -225,8 +251,7 @@ export function Viewport() {
         e.button !== 0 ||
         changing ||
         dragged ||
-        Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 5 ||
-        transform.axis
+        Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 5
       )
         return;
       const rect = el.getBoundingClientRect();
@@ -234,23 +259,18 @@ export function Viewport() {
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
         (-(e.clientY - rect.top) / rect.height) * 2 + 1,
       );
+      rt.camera.updateWorldMatrix(true, false);
       ray.setFromCamera(pointer, rt.camera);
       const st = useStore.getState();
-      const hits = ray
-        .intersectObjects(
-          [...rt.objects.values()].filter((o) => o.visible),
-          true,
-        )
-        .filter(
-          (h) => h.object instanceof THREE.Mesh || h.object instanceof THREE.LineSegments,
-        );
-      if (hits.length) {
-        let o = hits[0].object;
-        while (o.parent && !o.userData.id) o = o.parent;
-        if (o.userData.id) {
-          st.select(o.userData.id, e.shiftKey || e.ctrlKey || e.metaKey);
-          return;
-        }
+      const hits = pickSceneObjects(ray, [...rt.objects.values()]);
+      const picked = pickCandidate(
+        hits.map((hit) => hit.id),
+        st.selected[0],
+        e.altKey,
+      );
+      if (picked) {
+        st.select(picked, e.shiftKey || e.ctrlKey || e.metaKey);
+        return;
       }
       // Keep millimetre-sized markers selectable without enlarging their geometry.
       const nearby = activeScheme(st)
@@ -294,7 +314,7 @@ export function Viewport() {
           st.set({ point: target.toArray() as Vec3, selected: [] });
       } else st.set({ selected: [] });
     };
-    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointerdown", down, true);
     el.addEventListener("pointerup", click);
     const context = (e: Event) => e.preventDefault();
     el.addEventListener("contextmenu", context);
@@ -308,7 +328,7 @@ export function Viewport() {
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
-      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointerdown", down, true);
       el.removeEventListener("pointerup", click);
       el.removeEventListener("contextmenu", context);
       transform.dispose();

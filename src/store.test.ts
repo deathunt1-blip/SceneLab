@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "./store";
 import { createP3Model, newModel, storageStatus } from "./camera/repository";
-import { makeCamera, makeObject, makeProject } from "./project/data";
+import { makeCamera, makeObject, makeProject, validateProject } from "./project/data";
 
 let useStore: typeof import("./store").useStore;
 let entries: Map<string, string>;
@@ -17,10 +17,91 @@ beforeEach(() => {
   const project = makeProject(newModel());
   project.schemes[0].settings.voxel = 0.1;
   state().loadProject(project);
-  state().set({ toast: "", clipboard: [], pasteCount: 0 });
+  state().set({
+    toast: "",
+    clipboard: [],
+    clipboardGroups: [],
+    pasteCount: 0,
+    models: [],
+  });
 });
 
 describe("scene clipboard and history", () => {
+  it("groups mixed assets, persists names, renames, copies and undoes the whole operation", () => {
+    const originals = state().project.schemes[0].objects;
+    const ids = [originals[0].id, originals.find((o) => o.kind === "box")!.id];
+    state().set({ selected: ids });
+    state().groupSelection("Stage A");
+    let scheme = state().project.schemes[0];
+    const groupId = scheme.objects[0].group!;
+    expect(scheme.groups).toEqual([{ id: groupId, name: "Stage A" }]);
+    expect(scheme.objects.filter((o) => o.group === groupId).map((o) => o.id)).toEqual(
+      ids,
+    );
+    state().renameGroup(groupId, "Stage B");
+    state().copy();
+    state().paste();
+    scheme = state().project.schemes[0];
+    const copiedGroup = scheme.objects.at(-1)!.group!;
+    expect(scheme.groups?.find((g) => g.id === copiedGroup)?.name).toBe("Stage B · 2");
+    state().undo();
+    expect(state().project.schemes[0].groups).toHaveLength(1);
+    state().redo();
+    const restored = JSON.parse(entries.get("camera-planner.project.v1")!);
+    expect(() => validateProject(restored)).not.toThrow();
+    expect(restored.schemes[0].groups).toHaveLength(2);
+  });
+  it("moves members between groups, skips locks, removes empty metadata and supports old groups", () => {
+    const [a, b] = state().project.schemes[0].objects;
+    state().set({ selected: [a.id] });
+    state().groupSelection("One");
+    const id = state().project.schemes[0].objects[0].group!;
+    state().set({ selected: [b.id] });
+    state().groupSelection("Two");
+    state().groupSelection("One", id);
+    expect(state().project.schemes[0].groups).toEqual([{ id, name: "One" }]);
+    state().updateObjects([b.id], { locked: true });
+    state().set({ selected: [a.id, b.id] });
+    state().ungroupSelection();
+    expect(state().project.schemes[0].objects[0].group).toBeUndefined();
+    expect(state().project.schemes[0].objects[1].group).toBe(id);
+    const legacy = makeProject(newModel());
+    expect(legacy.schemes[0].objects[0].group).toBeTruthy();
+    expect(legacy.schemes[0].groups).toBeUndefined();
+    expect(() => validateProject(legacy)).not.toThrow();
+    legacy.schemes[0].groups = [{ id: "broken", name: " " }];
+    expect(() => validateProject(legacy)).toThrow("invalidFile");
+  });
+  it("batch updates each camera from its own model, skips locks and missing models, and restores snapshots on undo", () => {
+    const p3 = createP3Model(),
+      mono = newModel();
+    const cameras = [p3, mono, p3, { ...mono, id: "missing" }].map((m, i) =>
+      makeCamera(m, [i, -1, 1], [0, 1, 1]),
+    );
+    cameras[2].locked = true;
+    const box = makeObject("box");
+    state().edit((s) => {
+      s.objects = [...cameras, box];
+    });
+    const before = structuredClone(state().project);
+    state().set({
+      models: [
+        { ...p3, minimum_marker_pixels: 8 },
+        { ...mono, minimum_marker_pixels: 2 },
+      ],
+      selected: [...cameras, box].map((o) => o.id),
+    });
+    state().updateCameraSnapshots();
+    const objects = state().project.schemes[0].objects;
+    expect(objects[0].camera_model_snapshot!.minimum_marker_pixels).toBe(8);
+    expect(objects[1].camera_model_snapshot!.minimum_marker_pixels).toBe(2);
+    expect(objects[2]).toEqual(cameras[2]);
+    expect(objects[3]).toEqual(cameras[3]);
+    expect(objects[4]).toEqual(box);
+    expect(objects[0].position).toEqual(cameras[0].position);
+    state().undo();
+    expect(state().project).toEqual(before);
+  });
   it("copies a tube and mounted stereo camera, preserves calibration and undoes dimension edits", () => {
     const tube = makeObject("tube");
     const camera = {

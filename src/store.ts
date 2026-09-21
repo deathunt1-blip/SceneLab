@@ -58,6 +58,7 @@ export interface AppState {
   past: Project[];
   future: Project[];
   clipboard: SceneObject[];
+  clipboardGroups: { id: string; name: string }[];
   pasteCount: number;
   set: (patch: Partial<AppState>) => void;
   edit: (fn: (s: Scheme) => void) => void;
@@ -66,6 +67,10 @@ export interface AppState {
   undo: () => void;
   redo: () => void;
   select: (id: string, multi?: boolean) => void;
+  groupSelection: (name: string, existingId?: string) => void;
+  ungroupSelection: () => void;
+  renameGroup: (id: string, name: string) => void;
+  updateCameraSnapshots: () => void;
   remove: () => void;
   duplicate: () => void;
   copy: () => void;
@@ -106,6 +111,7 @@ export const useStore = create<AppState>((set, get) => ({
   past: [],
   future: [],
   clipboard: [],
+  clipboardGroups: [],
   pasteCount: 0,
   set: (patch) => {
     if (patch.lang)
@@ -132,6 +138,10 @@ export const useStore = create<AppState>((set, get) => ({
       p = structuredClone(previous),
       s = activeScheme({ project: p });
     fn(s);
+    if (s.groups) {
+      const usedGroups = new Set(s.objects.map((o) => o.group));
+      s.groups = s.groups.filter((g) => usedGroups.has(g.id));
+    }
     const oldScheme = activeScheme({ project: previous });
     const view = reconcileAnalysisView(
       s.boundary,
@@ -226,11 +236,18 @@ export const useStore = create<AppState>((set, get) => ({
     if (!activeScheme(get()).objects.some((o) => ids.includes(o.id) && !o.locked)) return;
     get().edit((s) => {
       s.objects = s.objects.filter((o) => !ids.includes(o.id) || o.locked);
+      for (const o of s.objects)
+        if (o.mount && !s.objects.some((structure) => structure.id === o.mount))
+          o.mount = undefined;
     });
     set({ selected: [] });
   },
   duplicate: () => {
-    const saved = { clipboard: get().clipboard, pasteCount: get().pasteCount };
+    const saved = {
+      clipboard: get().clipboard,
+      clipboardGroups: get().clipboardGroups,
+      pasteCount: get().pasteCount,
+    };
     if (!get().selected.length) return;
     get().copy();
     get().paste();
@@ -241,7 +258,12 @@ export const useStore = create<AppState>((set, get) => ({
       get().selected.includes(o.id),
     );
     if (!source.length) return;
-    set({ clipboard: structuredClone(source), pasteCount: 0, toast: "objectsCopied" });
+    set({
+      clipboard: structuredClone(source),
+      clipboardGroups: structuredClone(activeScheme(get()).groups ?? []),
+      pasteCount: 0,
+      toast: "objectsCopied",
+    });
   },
   paste: () => {
     if (!get().clipboard.length) return;
@@ -252,8 +274,76 @@ export const useStore = create<AppState>((set, get) => ({
     const copies = pasteObjects(get().clipboard, s.objects, [distance, distance, 0]);
     get().edit((s) => {
       s.objects.push(...copies);
+      for (const group of get().clipboardGroups) {
+        const index = get().clipboard.findIndex((o) => o.group === group.id);
+        if (index < 0 || !copies[index].group) continue;
+        const names = new Set(s.groups?.map((g) => g.name));
+        let suffix = 2;
+        while (names.has(`${group.name} · ${suffix}`)) suffix++;
+        (s.groups ??= []).push({
+          id: copies[index].group!,
+          name: `${group.name} · ${suffix}`,
+        });
+      }
     });
     set({ selected: copies.map((o) => o.id), pasteCount: count, toast: "objectsPasted" });
+  },
+  groupSelection: (name, existingId) => {
+    const ids = get().selected;
+    const scheme = activeScheme(get());
+    if (!name.trim() || !scheme.objects.some((o) => ids.includes(o.id) && !o.locked))
+      return;
+    if (existingId && !scheme.objects.some((o) => o.group === existingId)) return;
+    const id = existingId ?? uid();
+    get().edit((s) => {
+      if (!s.groups?.some((g) => g.id === id))
+        (s.groups ??= []).push({ id, name: name.trim() });
+      for (const o of s.objects) if (ids.includes(o.id) && !o.locked) o.group = id;
+    });
+  },
+  ungroupSelection: () => {
+    const ids = get().selected;
+    if (
+      !activeScheme(get()).objects.some((o) => ids.includes(o.id) && o.group && !o.locked)
+    )
+      return;
+    get().edit((s) => {
+      for (const o of s.objects) if (ids.includes(o.id) && !o.locked) o.group = undefined;
+    });
+  },
+  renameGroup: (id, name) => {
+    if (!name.trim() || !activeScheme(get()).objects.some((o) => o.group === id)) return;
+    get().edit((s) => {
+      const group = s.groups?.find((g) => g.id === id);
+      if (group) group.name = name.trim();
+      else (s.groups ??= []).push({ id, name: name.trim() });
+    });
+  },
+  updateCameraSnapshots: () => {
+    const state = get();
+    const updates = new Map(
+      activeScheme(state)
+        .objects.filter(
+          (o) => state.selected.includes(o.id) && !o.locked && o.kind === "camera",
+        )
+        .flatMap((o) => {
+          const model = state.models.find((m) => m.id === o.camera_model_id);
+          return model &&
+            JSON.stringify(model) !== JSON.stringify(o.camera_model_snapshot)
+            ? [[o.id, model] as const]
+            : [];
+        }),
+    );
+    if (!updates.size) return;
+    state.edit((s) => {
+      for (const o of s.objects) {
+        const model = updates.get(o.id);
+        if (!model) continue;
+        o.camera_model_snapshot = structuredClone(model);
+        if (model.layout_supported === false) o.enabled = false;
+      }
+    });
+    set({ toast: "cameraSnapshotsUpdated" });
   },
   loadProject: (p) => {
     validateProject(p);
