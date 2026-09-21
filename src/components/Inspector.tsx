@@ -4,10 +4,11 @@ import { useT } from "../i18n";
 import { Field, Num, Toggle, fmt } from "./Common";
 import type { SceneObject, Vec3 } from "../models";
 import { uid } from "../models";
-import { add, length, lookAt, mul, rotate, sub, unrotate } from "../simulation/math";
+import { add, lookAt, mul, sub } from "../simulation/math";
 import { CameraPreview } from "./CameraPreview";
 import { analyzePoint, rigidTrackability, worldMarkers } from "../simulation/engine";
 import { makeObject } from "../project/data";
+import { nearestMount } from "../project/structures";
 export function Inspector() {
   const st = useStore(),
     t = useT(),
@@ -36,7 +37,11 @@ export function Inspector() {
         {[0, 1, 2].map((i) => (
           <div key={i} className={"axis axis-" + i}>
             <label>
-              {key === "rotation" ? ["Yaw", "Pitch", "Roll"][i] : ["X", "Y", "Z"][i]}
+              {key === "rotation"
+                ? ["Yaw", "Pitch", "Roll"][i]
+                : key === "size" && o.kind === "tube"
+                  ? t(["length", "width", "height"][i])
+                  : ["X", "Y", "Z"][i]}
               {selected.some((item) => item[key][i] !== o[key][i]) && (
                 <small title={t("mixed")}>≠</small>
               )}
@@ -198,6 +203,7 @@ export function Inspector() {
         {transform("rotation", "rotation", "°")}
         {!["camera", "marker", "rigidBody"].includes(o.kind) &&
           transform("size", "dimensions", "m")}
+        {o.kind === "tube" && <p className="tiny muted">{t("tubeHint")}</p>}
         {o.kind === "camera" && (
           <>
             <div className="section-divider" />
@@ -258,6 +264,12 @@ export function Inspector() {
               </b>
               <span>{t("pixelError")}</span>
               <b>{model?.default_pixel_localization_error_px} px</b>
+              {model?.stereo && (
+                <>
+                  <span>{t("baseline")}</span>
+                  <b>{model.stereo.baseline_mm} mm</b>
+                </>
+              )}
             </div>
             <button
               className="full"
@@ -278,50 +290,19 @@ export function Inspector() {
             <div className="button-row">
               <button
                 onClick={() => {
-                  const structures = s.objects.filter((o) =>
-                    ["truss", "surface"].includes(o.kind),
-                  );
-                  if (!structures.length) {
+                  if (!nearestMount(s.objects, o.position)) {
                     st.set({ toast: "noStructure" });
                     return;
                   }
                   st.edit((s) => {
                     for (const c of s.objects.filter(
-                      (o) => st.selected.includes(o.id) && !o.locked,
+                      (o) => o.kind === "camera" && st.selected.includes(o.id) && !o.locked,
                     )) {
-                      const nearest = structures
-                        .slice()
-                        .sort(
-                          (a, b) =>
-                            length(sub(a.position, c.position)) -
-                            length(sub(b.position, c.position)),
-                        )[0];
-                      const local = unrotate(
-                        sub(c.position, nearest.position),
-                        nearest.rotation,
-                      );
-                      const axis = nearest.size[0] >= nearest.size[1] ? 0 : 1;
-                      const pos: Vec3 =
-                        nearest.kind === "surface"
-                          ? [
-                              Math.max(
-                                -nearest.size[0] / 2,
-                                Math.min(nearest.size[0] / 2, local[0]),
-                              ),
-                              Math.max(
-                                -nearest.size[1] / 2,
-                                Math.min(nearest.size[1] / 2, local[1]),
-                              ),
-                              nearest.size[2] / 2,
-                            ]
-                          : [0, 0, 0];
-                      if (nearest.kind === "truss")
-                        pos[axis] = Math.max(
-                          -nearest.size[axis] / 2,
-                          Math.min(nearest.size[axis] / 2, local[axis]),
-                        );
-                      c.position = add(nearest.position, rotate(pos, nearest.rotation));
-                      c.mount = nearest.id;
+                      const nearest = nearestMount(s.objects, c.position);
+                      if (nearest) {
+                        c.position = nearest.position;
+                        c.mount = nearest.structure.id;
+                      }
                     }
                   });
                 }}

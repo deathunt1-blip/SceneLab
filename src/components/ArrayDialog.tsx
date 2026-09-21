@@ -6,17 +6,15 @@ import { cameraArray, makeCamera, type ArrayType } from "../project/data";
 import { Modal, Field, Num } from "./Common";
 import type { Vec3 } from "../models";
 import { uid } from "../models";
-import { add, rotate } from "../simulation/math";
+import { isBeam, beamArrayPoint } from "../project/structures";
 export function ArrayDialog() {
   const st = useStore(),
     t = useT(),
     s = activeScheme(st);
   const truss = s.objects.find(
-    (o) => st.selected.includes(o.id) && o.kind === "truss",
+    (o) => st.selected.includes(o.id) && isBeam(o) && o.visible && o.enabled,
   );
-  const [type, setType] = useState<ArrayType | "truss">(
-      truss ? "truss" : "rectangle",
-    ),
+  const [type, setType] = useState<ArrayType | "truss">(truss ? "truss" : "rectangle"),
     [model, setModel] = useState(st.models[0]?.id || ""),
     [count, setCount] = useState(16),
     [radius, setRadius] = useState(Math.min(s.boundary[0], s.boundary[1]) / 2),
@@ -114,31 +112,21 @@ export function ArrayDialog() {
           </div>
         </Field>
         <div className="modal-actions">
-          <button onClick={() => st.set({ arrayOpen: false })}>
-            {t("cancel")}
-          </button>
+          <button onClick={() => st.set({ arrayOpen: false })}>{t("cancel")}</button>
           <button
             className="primary"
             disabled={!model}
             onClick={() => {
               const m = st.models.find((m) => m.id === model)!;
-              const offset = s.objects.filter(
-                  (o) => o.kind === "camera",
-                ).length,
+              const offset = s.objects.filter((o) => o.kind === "camera").length,
                 group = uid();
               const cameras =
                 type === "truss" && truss
                   ? Array.from({ length: count }, (_, i) => {
-                      const axis = truss.size[0] >= truss.size[1] ? 0 : 1;
-                      const local: Vec3 = [0, 0, 0];
-                      local[axis] =
-                        count === 1
-                          ? 0
-                          : (i / (count - 1) - 0.5) * truss.size[axis];
                       return {
                         ...makeCamera(
                           m,
-                          add(truss.position, rotate(local, truss.rotation)),
+                          beamArrayPoint(truss, i, count),
                           target,
                           offset + i + 1,
                         ),

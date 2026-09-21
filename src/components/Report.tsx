@@ -3,7 +3,8 @@ import { Check, FileText, Printer } from "lucide-react";
 import { activeScheme, useStore } from "../store";
 import { translate, useT } from "../i18n";
 import { fmt } from "./Common";
-import type { Language } from "../models";
+import type { CameraEye, Language } from "../models";
+import { viewCount } from "../simulation/engine";
 import { ReportCameraImage } from "./CameraImage";
 export interface ReportImage {
   manual?: boolean;
@@ -158,12 +159,17 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
               <h3>
                 02 / {t("coverage")} & {t("accuracy")}
               </h3>
+              {models.some((m) => m.stereo) && (
+                <p className="report-note">
+                  {t("stereoCountNote")} {t("stereoAssumptions")}
+                </p>
+              )}
               <div className="report-charts">
                 <div>
                   {r!.coverage.map((v, i) => (
                     <div className="coverage-bar" key={i}>
                       <span>
-                        ≥{i + 1} {t("cameras")}
+                        ≥{i + 1} {t("viewpoints")}
                       </span>
                       <div>
                         <i style={{ width: v + "%" }} />
@@ -214,7 +220,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
                           <i className={"gradient " + img.layer} />
                           <span>
                             {img.layer === "coverage"
-                              ? `0 → ${Math.max(5, cameras.filter((c) => c.enabled).length)}`
+                              ? `0 → ${Math.max(5, viewCount(s))}`
                               : `0 → ${s.settings.errorThreshold * 2} mm`}
                           </span>
                         </div>
@@ -258,7 +264,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
                         <th>{t("distance")}</th>
                         <td>
                           {m.max_working_distance_m === null
-                            ? "—"
+                            ? t("unlimitedRange")
                             : `${m.min_working_distance_m}–${m.max_working_distance_m} m`}
                         </td>
                         <th>{t("focalLength")}</th>
@@ -270,6 +276,16 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
                         <th>{t("pixelError")}</th>
                         <td>{m.default_pixel_localization_error_px} px</td>
                       </tr>
+                      {m.stereo && (
+                        <tr>
+                          <th>{t("baseline")}</th>
+                          <td>{m.stereo.baseline_mm} mm</td>
+                          <th>{t("stereoViews")}</th>
+                          <td>
+                            {t("leftEye")} / {t("rightEye")}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <th>{t("distortion")}</th>
                         <td colSpan={3}>
@@ -286,9 +302,21 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
               <section className="report-camera-section">
                 <h3>05 / {t("reportCameraViews")}</h3>
                 <p className="report-note">{t("cameraPreviewNote")}</p>
-                {cameras.map((c) => (
-                  <ReportCameraImage key={c.id} scheme={s} cameraId={c.id} lang={lang} />
-                ))}
+                {cameras.flatMap((c) =>
+                  (
+                    (c.camera_model_snapshot?.stereo
+                      ? ["left", "right"]
+                      : [undefined]) as (CameraEye | undefined)[]
+                  ).map((eye) => (
+                    <ReportCameraImage
+                      key={`${c.id}:${eye ?? "mono"}`}
+                      scheme={s}
+                      cameraId={c.id}
+                      lang={lang}
+                      eye={eye}
+                    />
+                  )),
+                )}
               </section>
             )}
             {sections.includes("issues") && (
@@ -356,7 +384,7 @@ export function Report({ images, onRun }: { images: ReportImage[]; onRun: () => 
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.0{" "}
+              SCENELAB v1.1{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

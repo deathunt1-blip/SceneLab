@@ -1,6 +1,7 @@
 import type {
   Accuracy,
   CameraModel,
+  CameraEye,
   Observation,
   PointResult,
   SceneObject,
@@ -24,7 +25,38 @@ export interface PreparedCamera {
   object: SceneObject;
   model: CameraModel;
   axes: [Vec3, Vec3, Vec3];
+  eye?: CameraEye;
 }
+export function prepareCamera(object: SceneObject): PreparedCamera[] {
+  const model = object.camera_model_snapshot!;
+  const axes = basis(object.rotation);
+  if (!model.stereo) return [{ object, model, axes }];
+  return (["left", "right"] as const).map((eye) => ({
+    object: {
+      ...object,
+      position: add(
+        object.position,
+        mul(axes[0], ((eye === "left" ? -1 : 1) * model.stereo!.baseline_mm) / 2000),
+      ),
+    },
+    model,
+    axes,
+    eye,
+  }));
+}
+export const viewCount = (s: Scheme) =>
+  s.objects.reduce(
+    (total, o) =>
+      total +
+      (o.kind === "camera" &&
+      o.enabled &&
+      o.camera_model_snapshot?.layout_supported !== false
+        ? o.camera_model_snapshot?.stereo
+          ? 2
+          : 1
+        : 0),
+    0,
+  );
 export const prepareCameras = (s: Scheme): PreparedCamera[] =>
   s.objects
     .filter(
@@ -34,17 +66,13 @@ export const prepareCameras = (s: Scheme): PreparedCamera[] =>
         o.camera_model_snapshot &&
         o.camera_model_snapshot.layout_supported !== false,
     )
-    .map((object) => ({
-      object,
-      model: object.camera_model_snapshot!,
-      axes: basis(object.rotation),
-    }));
+    .flatMap(prepareCamera);
 export const obstacles = (s: Scheme) =>
   s.objects.filter(
     (o) =>
       o.enabled &&
       o.occlusion &&
-      ["box", "cylinder", "wall", "surface", "truss"].includes(o.kind),
+      ["box", "cylinder", "wall", "surface", "truss", "tube"].includes(o.kind),
   );
 export function pointInside(p: Vec3, o: SceneObject) {
   const v = unrotate(sub(p, o.position), o.rotation);
@@ -131,6 +159,8 @@ export function observe(
   const pixels = z > 0 ? (Math.min(m.fx, m.fy) * diameter) / 1000 / z : 0;
   const out: Observation = {
     cameraId: c.object.id,
+    eye: c.eye,
+    cameraPosition: c.object.position,
     valid: false,
     reasons: [],
     distance,
@@ -329,6 +359,7 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
     revision: s.revision,
     timestamp: new Date().toISOString(),
     elapsed: performance.now() - start,
+    boundary: [...s.boundary],
     voxelSize: [lx / ns[0], ly / ns[1], lz / ns[2]],
     positions: positions.slice(0, used * 3),
     counts: counts.slice(0, used),

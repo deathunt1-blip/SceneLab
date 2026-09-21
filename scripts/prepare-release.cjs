@@ -14,7 +14,7 @@ fs.writeFileSync(path.join(staging, "package.json"), JSON.stringify({
 }, null, 2));
 const packages = ["react", "react-dom", "scheduler", "three", "zustand", "lucide-react",
   "@fontsource/dm-sans", "@fontsource/ibm-plex-mono"];
-let notices = "SceneLab v1.0 - Third-party notices\n\nElectron and Chromium licenses are provided separately in this folder.\n\n";
+let notices = "SceneLab v1.1 - Third-party notices\n\nElectron and Chromium licenses are provided separately in this folder.\n\n";
 for (const name of packages) {
   const dir = path.join(root, "node_modules", name);
   const info = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
@@ -25,7 +25,7 @@ for (const name of packages) {
 }
 fs.mkdirSync(path.join(root, "build/resources"), { recursive: true });
 fs.writeFileSync(path.join(root, "build/resources/THIRD-PARTY-NOTICES.txt"), notices);
-for (const file of ["output/pdf/SceneLab_v1.0_使用说明.pdf", "build/resources/icon.ico"]) {
+for (const file of ["output/pdf/SceneLab_v1.1_使用说明.pdf", "build/resources/icon.ico"]) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Required release asset missing: ${file}`);
 }
 console.log(`Prepared SceneLab ${pkg.version}; application contains compiled UI and desktop host only.`);

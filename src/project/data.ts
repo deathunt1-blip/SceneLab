@@ -24,11 +24,13 @@ export function makeObject(kind: ObjectKind, n = 1): SceneObject {
     size:
       kind === "wall"
         ? [4, 0.2, 3]
-        : kind === "truss"
-          ? [10, 0.25, 0.25]
-          : kind === "surface"
-            ? [10, 8, 0.1]
-            : [1.5, 1.5, 2],
+        : kind === "tube"
+          ? [4, 0.05, 0.05]
+          : kind === "truss"
+            ? [10, 0.25, 0.25]
+            : kind === "surface"
+              ? [10, 8, 0.1]
+              : [1.5, 1.5, 2],
     visible: true,
     locked: false,
     enabled: true,
@@ -214,6 +216,7 @@ export function validateProject(p: Project): void {
           "marker",
           "rigidBody",
           "truss",
+          "tube",
           "surface",
         ].includes(o.kind) ||
         !vec(o.position) ||

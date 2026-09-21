@@ -12,6 +12,8 @@ import {
 import source from "./data/chingmu-v1.json";
 import { makeCamera, makeProject } from "../project/data";
 import { prepareCameras } from "../simulation/engine";
+import { catalogVersion } from "./catalog";
+import { p3CatalogVersion } from "./p3";
 const key = "camera-planner.camera-library.v1";
 let entries: Map<string, string>;
 let storage: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn> };
@@ -137,11 +139,30 @@ describe("Chingmu catalog mapping", () => {
 });
 
 describe("camera library persistence", () => {
+  it("adds P3 to an existing v1.0 library once, without restoring deleted or overwriting edited models", () => {
+    const previous = createCatalogModels().slice(1);
+    previous[0].notes = "用户修改保留";
+    entries.set(
+      key,
+      JSON.stringify({
+        schema_version: 1,
+        models: previous,
+        applied_catalogs: [catalogVersion],
+      }),
+    );
+    const upgraded = readLibrary();
+    expect(upgraded).toHaveLength(previous.length + 1);
+    expect(upgraded.slice(0, previous.length)).toEqual(previous);
+    expect(upgraded.at(-1)!.catalog!.dataset).toBe(p3CatalogVersion);
+    expect(readLibrary()).toEqual(upgraded);
+    expect(writeLibrary(previous)).toBe(true);
+    expect(readLibrary()).toEqual(previous);
+  });
   it("migrates an existing library once without changing custom models", () => {
     const custom = { ...newModel(), model_name: "Existing user model" };
     entries.set(key, JSON.stringify({ schema_version: 1, models: [custom] }));
     const first = readLibrary();
-    expect(first).toHaveLength(30);
+    expect(first).toHaveLength(31);
     expect(first[0]).toEqual(custom);
     expect(readLibrary()).toEqual(first);
     expect(storage.setItem).toHaveBeenCalledTimes(1);
@@ -174,7 +195,7 @@ describe("camera library persistence", () => {
       throw new Error("Quota exceeded");
     });
     expect(readLibrary()).toEqual([custom]);
-    expect(readLibrary()).toHaveLength(30);
+    expect(readLibrary()).toHaveLength(31);
   });
   it("preserves corrupted libraries instead of overwriting them during migration", () => {
     entries.set(key, "broken-json");

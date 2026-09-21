@@ -135,7 +135,7 @@ export function PixelViewer({
   const point = scene.points.find((p) => p.id === selected);
   return createPortal(
     <Modal
-      title={`${scene.camera.name} · ${t("pixelPreview")}`}
+      title={`${scene.camera.name}${scene.eye ? ` · ${t(scene.eye + "Eye")}` : ""} · ${t("pixelPreview")}`}
       subtitle={`${scene.model.resolution_width} × ${scene.model.resolution_height} px · ${t("pixelPreviewHint")}`}
       wide
       onClose={onClose}

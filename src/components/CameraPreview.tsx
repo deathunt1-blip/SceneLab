@@ -5,20 +5,45 @@ import { useT } from "../i18n";
 import { cameraImage } from "../simulation/imaging";
 import { CameraDiagram } from "./CameraImage";
 import { PixelViewer } from "./PixelViewer";
+import type { CameraEye } from "../models";
 
-export function CameraPreview({ cameraId }: { cameraId: string }) {
+export function CameraPreview({ cameraId, eye }: { cameraId: string; eye?: CameraEye }) {
   const st = useStore(),
     t = useT(),
     s = activeScheme(st);
   const [expanded, setExpanded] = useState(false);
-  const scene = useMemo(() => cameraImage(s, cameraId), [s, cameraId]);
+  const [selectedEye, setSelectedEye] = useState<CameraEye>("left");
+  const activeEye = eye ?? selectedEye;
+  const scene = useMemo(
+    () => cameraImage(s, cameraId, activeEye),
+    [s, cameraId, activeEye],
+  );
   if (!scene) return <div className="muted">{t("previewHint")}</div>;
   const m = scene.model;
   return (
     <>
+      {m.stereo && !eye && (
+        <div className="segmented" aria-label={t("stereoViews")}>
+          {(["left", "right"] as const).map((side) => (
+            <button
+              key={side}
+              className={activeEye === side ? "active" : ""}
+              onClick={() => {
+                setSelectedEye(side);
+                setExpanded(false);
+              }}
+            >
+              {t(side + "Eye")}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="camera-preview">
         <div className="preview-meta">
-          <span>{scene.camera.name}</span>
+          <span>
+            {scene.camera.name}
+            {scene.eye ? ` · ${t(scene.eye + "Eye")}` : ""}
+          </span>
           <span>
             {m.resolution_width} × {m.resolution_height}
           </span>
