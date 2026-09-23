@@ -1,12 +1,14 @@
 # SceneLab v1.4
 
-光学动捕相机部署与理论精度仿真工作台。**v1.4 新增 Auto Deploy 自动部署**：按约束生成候选，复用物理仿真引擎精算，预览、比较并应用为可编辑方案。支持 Windows、Apple Silicon 与 Intel Mac；Kimi 助手为可选功能，离线规划无需 API。
+光学动捕相机部署与理论精度仿真工作台。**v1.4 新增 Auto Deploy 自动部署**：按约束生成候选，复用物理仿真引擎精算，预览、比较并应用为可编辑方案。本次发布 Windows x64；Mac 暂保留 v1.3.1。Kimi 助手为可选功能，离线规划无需 API。
 
 [下载 v1.4.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
 
 ### macOS
+
+Mac v1.4 暂不发布。已有版本请到 [v1.3.1 发布页](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1) 下载，其中尚不包含自动部署。
 
 macOS **13 Ventura 或更新版本**：M 系列芯片选 `arm64`，Intel 选 `x64`。打开 DMG，将 SceneLab 拖到 Applications 后，从“应用程序”打开；ZIP 需完整解压，保留整个 `.app`。无需 Node.js，菜单“帮助 → 使用说明”可打开内置离线 HTML 手册。
 

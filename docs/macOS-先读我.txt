@@ -19,7 +19,7 @@ Apple 说明：https://support.apple.com/zh-cn/guide/mac-help/mh40616/mac
 本地数据：~/Library/Application Support/Camera Planner。请定期导出备份。
 
 下载：https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0
-Windows v1.3.0：https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0
+Windows v1.4.0：https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0
 SHA256SUMS.txt 列出发布附件的 SHA-256。
 
 验证范围：M 系列原生启动；Intel 包通过 Rosetta 启动验证。Intel 实机 GPU 尚未验收。

@@ -387,7 +387,7 @@ export function Report({
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.3{" "}
+              SCENELAB v1.4{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>
