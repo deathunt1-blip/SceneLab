@@ -73,7 +73,13 @@ async function main() {
     SCENELAB_SMOKE_TEST: "1",
   };
   delete env.ELECTRON_RUN_AS_NODE;
-  const child = spawn(path.join(app, "Contents/MacOS/SceneLab"), [], {
+  // Intel CI VMs lack a Metal GPU. This opt-in is confined to the test
+  // process and its trusted local UI; distributed apps keep normal settings.
+  const softwareGL = process.env.SCENELAB_SMOKE_SOFTWARE_GL === "1";
+  const args = softwareGL
+    ? ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+    : [];
+  const child = spawn(path.join(app, "Contents/MacOS/SceneLab"), args, {
     env,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -113,7 +119,8 @@ async function main() {
           version,
           arch: process.arch,
           macOS: os.release(),
-          signatureVerified: true,
+        softwareGL,
+        signatureVerified: true,
           dmgVerified: true,
           ...result,
         },

@@ -20,7 +20,7 @@
 
 在 macOS 13+ 上运行 `npm ci`、`npm test`，然后执行 `npm run package:mac -- --arm64` 或 `npm run package:mac -- --x64`。输出位于 `release/build`，包含 DMG 与 ZIP；Mac 指南来自仓库内 HTML，不依赖 Windows PDF 生成环境。`node scripts/smoke-mac.cjs` 在对应架构的 Mac 上验证归档和启动，使用独立临时用户目录与端口。
 
-`.github/workflows/macos.yml` 对 PR、版本标签和手动触发分别构建两种架构。验证任务在另一台干净 macOS 构建机解包运行，检查签名完整性、架构、版本、帮助资源、DMG 安装链接及实际渲染。构建机检查不替代下载后的 Gatekeeper 和真实用户设备验证。
+`.github/workflows/macos.yml` 对 PR、版本标签和手动触发分别构建两种架构。验证任务在另一台干净 macOS 构建机解包运行，检查签名完整性、架构、版本、帮助资源、DMG 安装链接及实际渲染。Intel CI 虚拟机缺少 Metal GPU，仅其隔离测试进程通过 `SCENELAB_SMOKE_SOFTWARE_GL=1` 使用 SwiftShader 渲染受信任的本地界面，发布应用不添加此启动参数。构建机检查不替代下载后的 Gatekeeper 和真实用户设备验证。
 
 先合并检查通过的 PR，为最终提交创建版本标签，下载该标签的 Actions 附件，生成 SHA-256 清单后上传同名 Release。校验远端文件摘要与本地一致再发布，保留旧版本附件。当前 Mac 分发采用 ad-hoc 签名，不能宣称 Apple 开发者签名或公证。Windows 最新分发版仍为 v1.3.0，其发布附件不覆盖。
 

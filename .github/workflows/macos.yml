@@ -78,6 +78,8 @@ jobs:
           name: scenelab-macos-${{ matrix.arch }}
           path: release/build
       - name: Verify DMG, ZIP and packaged app startup
+        env:
+          SCENELAB_SMOKE_SOFTWARE_GL: ${{ matrix.arch == 'x64' && '1' || '0' }}
         run: node scripts/smoke-mac.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
