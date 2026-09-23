@@ -275,7 +275,9 @@ export function Report({
                       </tr>
                       <tr>
                         <th>{t("minPixels")}</th>
-                        <td>{m.minimum_marker_pixels} px</td>
+                        <td>
+                          {m.minimum_marker_pixels} × {m.minimum_marker_pixels} px
+                        </td>
                         <th>{t("pixelError")}</th>
                         <td>{m.default_pixel_localization_error_px} px</td>
                       </tr>
@@ -387,7 +389,7 @@ export function Report({
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.4.1{" "}
+              SCENELAB v1.4.2{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

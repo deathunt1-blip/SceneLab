@@ -362,6 +362,7 @@ export function CameraLibrary() {
               )}
               {numeric("focal_length_mm", "focalLength", "mm", 0.01)}
               {numeric("minimum_marker_pixels", "minPixels", "px", 0.01)}
+              <p className="small muted">{t("minPixelsHint")}</p>
               {numeric("min_working_distance_m", "minDistance", "m", 0)}
               {draft.max_working_distance_m !== null &&
                 numeric("max_working_distance_m", "maxDistance", "m", 0.01)}

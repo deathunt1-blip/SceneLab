@@ -139,6 +139,34 @@ describe("Chingmu catalog mapping", () => {
 });
 
 describe("camera library persistence", () => {
+  it("uses 1.5 px for every new/default camera and migrates old 4 px thresholds only once", () => {
+    expect(newModel().minimum_marker_pixels).toBe(1.5);
+    expect(readLibrary().every((m) => m.minimum_marker_pixels === 1.5)).toBe(true);
+    const models = readLibrary().map((m, i) => {
+      const { marker_threshold_version, ...legacy } = m;
+      return { ...legacy, minimum_marker_pixels: i === 1 ? 2.25 : 4 };
+    });
+    const raw = JSON.parse(entries.get(key)!);
+    entries.set(key, JSON.stringify({ ...raw, models }));
+    const upgraded = readLibrary();
+    expect(
+      upgraded.every((m, i) => m.minimum_marker_pixels === (i === 1 ? 2.25 : 1.5)),
+    ).toBe(true);
+    expect(upgraded.every((m) => m.marker_threshold_version === 1)).toBe(true);
+    upgraded[0].minimum_marker_pixels = 4;
+    writeLibrary(upgraded);
+    expect(readLibrary()).toEqual(upgraded);
+    for (const csv of [false, true]) {
+      const imported = importModels(
+        csv ? modelsCSV(upgraded) : JSON.stringify({ models: upgraded }),
+        csv,
+      );
+      expect(imported.map((m) => m.minimum_marker_pixels)).toEqual(
+        upgraded.map((m) => m.minimum_marker_pixels),
+      );
+      expect(imported.every((m) => m.marker_threshold_version === 1)).toBe(true);
+    }
+  });
   it("adds P3 to an existing v1.0 library once, without restoring deleted or overwriting edited models", () => {
     const previous = createCatalogModels().slice(1);
     previous[0].notes = "用户修改保留";

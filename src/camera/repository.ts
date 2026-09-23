@@ -2,6 +2,11 @@ import type { CameraModel } from "../models";
 import { uid } from "../models";
 import { catalogEntries, catalogVersion } from "./catalog";
 import { p3CatalogVersion, p3Entry } from "./p3";
+import {
+  DEFAULT_MARKER_PIXELS,
+  MARKER_THRESHOLD_VERSION,
+  migrateMarkerDefault,
+} from "./markerDefault";
 const KEY = "camera-planner.camera-library.v1";
 let appliedCatalogs: string[] = [];
 export const storageStatus = { error: "" };
@@ -60,7 +65,8 @@ export function newModel(): CameraModel {
     min_working_distance_m: 0.5,
     max_working_distance_m: 20,
     default_pixel_localization_error_px: 0.1,
-    minimum_marker_pixels: 4,
+    minimum_marker_pixels: DEFAULT_MARKER_PIXELS,
+    marker_threshold_version: MARKER_THRESHOLD_VERSION,
     distortion_model: "none",
     distortion_parameters: [0, 0, 0, 0, 0],
     source: "user",
@@ -133,6 +139,11 @@ export function validateModel(m: CameraModel): string[] {
     errors.push("distortionInvalid");
   if (!["basic", "advanced"].includes(m.input_mode)) errors.push("invalidFile");
   if (
+    m.marker_threshold_version !== undefined &&
+    m.marker_threshold_version !== MARKER_THRESHOLD_VERSION
+  )
+    errors.push("invalidFile");
+  if (
     [m.layout_supported, m.enabled_for_layout_default].some(
       (v) => v !== undefined && typeof v !== "boolean",
     )
@@ -196,11 +207,12 @@ export const createCatalogModels = () =>
   catalogEntries().map((entry) => derive({ ...newModel(), ...entry }));
 export const createP3Model = () => derive({ ...newModel(), ...p3Entry });
 function addCatalog(models: CameraModel[]) {
+  const migrated = models.map(migrateMarkerDefault);
   const pending = [
     { version: catalogVersion, create: createCatalogModels },
     { version: p3CatalogVersion, create: () => [createP3Model()] },
   ].filter((catalog) => !appliedCatalogs.includes(catalog.version));
-  if (!pending.length) return models;
+  if (!pending.length && migrated.every((m, i) => m === models[i])) return models;
   const additions = pending
     .flatMap((catalog) => catalog.create())
     .filter(
@@ -213,7 +225,7 @@ function addCatalog(models: CameraModel[]) {
               m.catalog.optical.profile_id === entry.catalog!.optical.profile_id),
         ),
     );
-  const merged = [...models, ...additions];
+  const merged = [...migrated, ...additions];
   const nextCatalogs = [...appliedCatalogs, ...pending.map((catalog) => catalog.version)];
   if (
     persist(KEY, { schema_version: 1, models: merged, applied_catalogs: nextCatalogs })

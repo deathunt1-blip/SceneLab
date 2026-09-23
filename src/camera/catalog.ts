@@ -37,7 +37,7 @@ export function catalogEntries(): Partial<CameraModel>[] {
       optical.environment === "Underwater"
         ? "采用表内水下有效视场角；当前模型不模拟水体浑浊、散射与折射变化。"
         : null,
-      "仿真假设（非厂商标定值）：最近距离 0 m（未限制）、图像点误差 0.1 px、最小 Marker 4 px、无畸变。请按实测调整。",
+      "仿真假设（非厂商标定值）：最近距离 0 m（未限制）、图像点误差 0.1 px、最小 Marker 投影宽、高各 1.5 px、无畸变。请按实测调整。",
     ]
       .filter(Boolean)
       .join("\n");

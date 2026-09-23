@@ -4,6 +4,8 @@ import { createP3Model, newModel, storageStatus } from "./camera/repository";
 import { makeCamera, makeObject, makeProject, validateProject } from "./project/data";
 import { defaultConstraints } from "./autoDeploy/constraints";
 import { generateCandidate, initialParameters } from "./autoDeploy/candidateGenerator";
+import { simulate } from "./simulation/engine";
+import { currentResult } from "./simulation/currentResult";
 
 let useStore: typeof import("./store").useStore;
 let entries: Map<string, string>;
@@ -29,6 +31,57 @@ beforeEach(() => {
 });
 
 describe("scene clipboard and history", () => {
+  it("migrates legacy project snapshots across schemes once and invalidates their analysis revisions", () => {
+    const model = { ...newModel(), minimum_marker_pixels: 4 };
+    delete model.marker_threshold_version;
+    const project = makeProject(model);
+    const second = structuredClone(project.schemes[0]);
+    second.id = "second";
+    second.objects[0].camera_model_snapshot!.minimum_marker_pixels = 2;
+    project.schemes.push(second);
+    state().loadProject(project);
+    expect(project.schemes[0].revision).toBe(0);
+    const loaded = state().project;
+    for (const scheme of loaded.schemes) {
+      expect(scheme.revision).toBe(1);
+      expect(
+        scheme.objects
+          .filter((o) => o.kind === "camera")
+          .every((o) => o.camera_model_snapshot!.minimum_marker_pixels <= 2),
+      ).toBe(true);
+    }
+    expect(
+      loaded.schemes[1].objects[0].camera_model_snapshot!.minimum_marker_pixels,
+    ).toBe(2);
+    loaded.schemes[0].objects[0].camera_model_snapshot!.minimum_marker_pixels = 4;
+    state().loadProject(structuredClone(loaded));
+    expect(state().project).toEqual(loaded);
+    expect(state().result).toBeNull();
+  });
+  it("hides old heatmaps and metrics after changing camera snapshots until a fresh analysis", () => {
+    const project = makeProject(newModel());
+    project.schemes[0].settings.voxel = 2;
+    state().loadProject(project);
+    const scheme = () => state().project.schemes[0];
+    const before = simulate(scheme());
+    state().set({ result: before });
+    expect(currentResult(scheme(), state().result)).toBe(before);
+    const replacement = { ...newModel(), minimum_marker_pixels: 1000 };
+    state().updateObjects(
+      scheme()
+        .objects.filter((o) => o.kind === "camera")
+        .map((o) => o.id),
+      { camera_model_id: replacement.id, camera_model_snapshot: replacement },
+    );
+    expect(state().result).toBe(before);
+    expect(currentResult(scheme(), state().result)).toBeNull();
+    const after = simulate(scheme());
+    state().set({ result: after });
+    expect(currentResult(scheme(), state().result)).toBe(after);
+    expect(after.averageCount).toBe(0);
+    expect(before.averageCount).toBeGreaterThan(0);
+    expect(currentResult({ ...scheme(), id: "another-scheme" }, after)).toBeNull();
+  });
   it("applies auto deployment as one undoable transaction, then redoes editable cameras", () => {
     const original = structuredClone(state().project),
       source = original.schemes[0],

@@ -1,6 +1,6 @@
 import type { CameraModel, SceneObject, Scheme, SimulationResult, Vec3 } from "../models";
 
-export const PLANNER_VERSION = "1.4.0";
+export const PLANNER_VERSION = "1.4.2";
 export const profiles = ["balanced", "coverage", "accuracy", "minimum"] as const;
 export type Profile = (typeof profiles)[number];
 export type Layout = "perimeter" | "ceiling" | "hybrid" | "free" | "existing";
