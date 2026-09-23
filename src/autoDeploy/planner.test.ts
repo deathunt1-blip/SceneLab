@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { derive, newModel, createP3Model } from "../camera/repository";
+import {
+  derive,
+  newModel,
+  createP3Model,
+  createCatalogModels,
+} from "../camera/repository";
 import { makeObject, makeProject, validateProject } from "../project/data";
 import { simulate } from "../simulation/engine";
 import { unrotate, sub } from "../simulation/math";
@@ -308,6 +313,65 @@ describe("verified offline planning", () => {
 });
 
 describe("application transaction", () => {
+  it("uses only the specified MC1300 from a library that also contains Demo, including after applying", () => {
+    const demo = { ...model(), id: "demo-m4", display_name: "M4 · Demo" };
+    const mc1300 = createCatalogModels().find(
+      (m) => m.display_name === "MC1300 · Standard",
+    )!;
+    const { s, c } = setup();
+    const constraints = { ...c, modelIds: [mc1300.id] };
+    const out = planDeployment({ scheme: s, models: [demo, mc1300], constraints });
+    expect(out.modelCount).toBe(1);
+    expect(out.recommendations.length).toBeGreaterThan(0);
+    const project = makeProject();
+    project.schemes = [s];
+    project.activeSchemeId = s.id;
+    for (const recommendation of out.recommendations) {
+      expect(recommendation.candidate.params.modelId).toBe(mc1300.id);
+      const applied = applyToProject(project, s, constraints, recommendation.candidate, {
+        mode: "new",
+        structures: true,
+        name: "MC1300 only",
+      });
+      const cameras = applied.project.schemes[1].objects.filter(
+        (o) => o.kind === "camera",
+      );
+      expect(cameras).toHaveLength(16);
+      for (const camera of cameras) {
+        expect(camera.camera_model_id).toBe(mc1300.id);
+        expect(camera.camera_model_snapshot).toEqual(mc1300);
+      }
+    }
+  });
+  it("refuses to apply a candidate containing an unselected model without changing the project", () => {
+    const { s, m, c } = setup();
+    const candidate = generateCandidate(
+      s,
+      c,
+      m,
+      initialParameters(c, m, "perimeter", 16),
+    );
+    const project = makeProject();
+    project.schemes = [s];
+    project.activeSchemeId = s.id;
+    const before = structuredClone(project);
+    expect(() =>
+      applyToProject(project, s, { ...c, modelIds: ["mc1300"] }, candidate, {
+        mode: "replace",
+        structures: false,
+        name: "Wrong model",
+      }),
+    ).toThrow("adModelMismatch");
+    candidate.cameras[0].camera_model_snapshot!.id = "demo-m4";
+    expect(() =>
+      applyToProject(project, s, c, candidate, {
+        mode: "replace",
+        structures: false,
+        name: "Wrong snapshot",
+      }),
+    ).toThrow("adModelMismatch");
+    expect(project).toEqual(before);
+  });
   it("creates editable cameras with remapped mounts without mutating the original; clears omitted mounts", () => {
     const { s, m, c } = setup(),
       project = makeProject();

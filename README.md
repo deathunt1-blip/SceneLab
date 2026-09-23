@@ -1,8 +1,8 @@
-# SceneLab v1.4
+# SceneLab v1.4.1
 
 光学动捕相机部署与理论精度仿真工作台。**v1.4 新增 Auto Deploy 自动部署**：按约束生成候选，复用物理仿真引擎精算，预览、比较并应用为可编辑方案。本次发布 Windows x64；Mac 暂保留 v1.3.1。Kimi 助手为可选功能，离线规划无需 API。
 
-[下载 v1.4.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
+[下载 v1.4.1](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.1) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
 
@@ -18,7 +18,7 @@ Mac 版使用 ad-hoc 签名，未使用 Apple 开发者证书，未公证。首�
 
 ### Windows
 
-发布文件位于 `release/SceneLab-v1.4/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
+发布文件位于 `release/SceneLab-v1.4.1/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
 
 安装版与免安装版都使用当前用户的 `%APPDATA%\\Camera Planner`，以兼容已有项目。免安装是无需安装，不表示数据随程序目录移动。分享项目和自定义相机库时，分别导出项目文件与参数库 JSON。发布包不包含本机用户数据。
 

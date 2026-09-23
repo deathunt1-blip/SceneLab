@@ -28,7 +28,9 @@ export function AutoDeployDialog() {
   const [mode, setMode] = useState<ApplyMode>("new"),
     [withStructures, setWithStructures] = useState(true),
     [name, setName] = useState("Auto Deploy"),
-    [specific, setSpecific] = useState(false);
+    [specific, setSpecific] = useState(false),
+    [editingModels, setEditingModels] = useState(false),
+    [draftModelIds, setDraftModelIds] = useState<string[]>([]);
   const worker = useRef<Worker | null>(null),
     closeRef = useRef<() => void>(() => {});
   const running = progress !== null,
@@ -56,9 +58,14 @@ export function AutoDeployDialog() {
       window.removeEventListener("keydown", key);
     };
   }, []);
+  const pendingModels = specific && (editingModels || !c.modelIds.length);
   const dirty = output && JSON.stringify(c) !== JSON.stringify(output.constraints);
   const chosen = output?.recommendations[selected];
   const generate = () => {
+    if (pendingModels) {
+      setError("adConfirmModelsFirst");
+      return;
+    }
     try {
       validateConstraints(c, models, source);
     } catch (e) {
@@ -247,39 +254,98 @@ export function AutoDeployDialog() {
                 onChange={(e) => {
                   const value = e.target.value === "specific";
                   setSpecific(value);
-                  patch({
-                    modelIds: value
-                      ? models
-                          .filter((m) => m.layout_supported !== false)
-                          .slice(0, 1)
-                          .map((m) => m.id)
-                      : [],
-                  });
+                  setEditingModels(value);
+                  setDraftModelIds([]);
+                  if (!value) patch({ modelIds: [] });
                 }}
               >
                 <option value="auto">{t("adAutoModel")}</option>
                 <option value="specific">{t("adSpecificModels")}</option>
               </select>
-              {specific && (
-                <div className="ad-model-list">
-                  {models
-                    .filter((m) => m.layout_supported !== false)
-                    .map((m) => (
-                      <label key={m.id} className="ad-check">
-                        <input
-                          type="checkbox"
-                          checked={c.modelIds.includes(m.id)}
-                          onChange={(e) => {
-                            const ids = e.target.checked
-                              ? [...c.modelIds, m.id]
-                              : c.modelIds.filter((id) => id !== m.id);
-                            if (ids.length) patch({ modelIds: ids });
-                          }}
-                        />
-                        {m.display_name}
-                        {m.stereo ? " · Stereo" : ""}
-                      </label>
-                    ))}
+              {specific && editingModels && (
+                <>
+                  <div className="ad-model-list">
+                    {models
+                      .filter((m) => m.layout_supported !== false)
+                      .map((m) => (
+                        <label key={m.id} className="ad-check">
+                          <input
+                            type="checkbox"
+                            checked={draftModelIds.includes(m.id)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setDraftModelIds((ids) =>
+                                checked
+                                  ? [...new Set([...ids, m.id])]
+                                  : ids.filter((id) => id !== m.id),
+                              );
+                            }}
+                          />
+                          {m.display_name}
+                          {m.stereo ? " · Stereo" : ""}
+                        </label>
+                      ))}
+                  </div>
+                  <div className="ad-model-selection" role="status" aria-live="polite">
+                    <strong>
+                      {t("adDraftModels")} · {draftModelIds.length}
+                    </strong>
+                    <p>
+                      {models
+                        .filter((m) => draftModelIds.includes(m.id))
+                        .map((m) => m.display_name)
+                        .join(" / ") || t("adNoModelsSelected")}
+                    </p>
+                  </div>
+                  <div className="ad-model-actions">
+                    <button
+                      onClick={() => setDraftModelIds([])}
+                      disabled={!draftModelIds.length}
+                    >
+                      {t("adClearModels")}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingModels(false);
+                        setSpecific(c.modelIds.length > 0);
+                        setDraftModelIds([...c.modelIds]);
+                      }}
+                    >
+                      {t("adCancelModelEdit")}
+                    </button>
+                    <button
+                      className="primary"
+                      disabled={!draftModelIds.length}
+                      onClick={() => {
+                        patch({ modelIds: [...draftModelIds] });
+                        setEditingModels(false);
+                        setError("");
+                      }}
+                    >
+                      {t("adConfirmModels")}
+                    </button>
+                  </div>
+                </>
+              )}
+              {specific && !editingModels && (
+                <div className="ad-model-selection" role="status" aria-live="polite">
+                  <strong>
+                    {t("adConfirmedModels")} · {c.modelIds.length}
+                  </strong>
+                  <p>
+                    {models
+                      .filter((m) => c.modelIds.includes(m.id))
+                      .map((m) => m.display_name)
+                      .join(" / ")}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setDraftModelIds([...c.modelIds]);
+                      setEditingModels(true);
+                    }}
+                  >
+                    {t("adEditModels")}
+                  </button>
                 </div>
               )}
               <p className="muted tiny">{t("adModelHint")}</p>
@@ -410,6 +476,8 @@ export function AutoDeployDialog() {
               onAccept={(next) => {
                 setC(next);
                 setSpecific(next.modelIds.length > 0);
+                setDraftModelIds([...next.modelIds]);
+                setEditingModels(false);
               }}
             />
           </aside>
@@ -671,7 +739,7 @@ export function AutoDeployDialog() {
                       <p className="muted tiny">{t("adApplyNote")}</p>
                       <button
                         className="primary"
-                        disabled={!!dirty || running}
+                        disabled={!!dirty || running || pendingModels}
                         onClick={() => {
                           try {
                             st.applyDeployment(
@@ -699,7 +767,13 @@ export function AutoDeployDialog() {
         </div>
         <footer className="ad-footer">
           <span>
-            {t("adFine")}: {source.settings.voxel} m · {t("aiDisabled")}
+            {pendingModels ? (
+              t("adConfirmModelsFirst")
+            ) : (
+              <>
+                {t("adFine")}: {source.settings.voxel} m · {t("aiDisabled")}
+              </>
+            )}
           </span>
           <button onClick={close}>{t("adClose")}</button>
           {running ? (
@@ -712,7 +786,7 @@ export function AutoDeployDialog() {
               {t("adCancel")}
             </button>
           ) : (
-            <button className="primary" onClick={generate}>
+            <button className="primary" onClick={generate} disabled={pendingModels}>
               <Play size={15} />
               {t("adGenerate")}
             </button>

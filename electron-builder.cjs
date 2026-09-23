@@ -23,6 +23,7 @@ module.exports = {
       { from: "output/pdf/SceneLab_v1.4_使用说明.pdf", to: "使用说明.pdf" },
       { from: "docs/先读我.txt", to: "先读我.txt" },
       { from: "docs/v1.4-更新说明.txt", to: "v1.4-更新说明.txt" },
+      { from: "docs/v1.4.1-更新说明.md", to: "v1.4.1-更新说明.md" },
       { from: "build/resources/THIRD-PARTY-NOTICES.txt", to: "THIRD-PARTY-NOTICES.txt" },
       { from: "examples", to: "示例相机参数" },
     ],
