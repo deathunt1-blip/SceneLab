@@ -23,6 +23,16 @@ export function applyToProject(
   )
     throw new Error("adStale");
   if (!candidate.feasible) throw new Error("adMountSpace");
+  if (
+    candidate.cameras.some(
+      (o) =>
+        !o.camera_model_snapshot ||
+        o.camera_model_id !== candidate.params.modelId ||
+        o.camera_model_snapshot.id !== o.camera_model_id ||
+        (c.modelIds.length > 0 && !c.modelIds.includes(o.camera_model_id)),
+    )
+  )
+    throw new Error("adModelMismatch");
   const p = structuredClone(project);
   let s = p.schemes.find((s) => s.id === source.id)!;
   if (options.mode === "new") {

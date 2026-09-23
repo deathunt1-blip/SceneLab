@@ -395,7 +395,7 @@ export function SceneTree() {
       <div className="left-footer">
         <span className="status-dot" />
         {t("local")}
-        <span>v1.4</span>
+        <span>v1.4.1</span>
       </div>
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} onClose={closeMenu}>

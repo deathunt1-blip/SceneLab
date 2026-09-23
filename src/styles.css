@@ -2964,6 +2964,27 @@ h4 {
   accent-color: #438775;
   flex-shrink: 0;
 }
+.ad-model-selection {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef6f2;
+  overflow-wrap: anywhere;
+}
+.ad-model-selection p {
+  margin: 6px 0;
+  font-size: 12px;
+}
+.ad-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ad-model-actions .primary {
+  flex: 1;
+}
 .ad-model-list {
   max-height: 210px;
   overflow: auto;

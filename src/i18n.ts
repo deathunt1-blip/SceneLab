@@ -395,7 +395,7 @@ const zh = {
   replace: "替换",
   newProjectConfirm: "创建空白项目",
   resetDemo: "打开演示项目",
-  appVersion: "SceneLab v1.4",
+  appVersion: "SceneLab v1.4.1",
   deleteModelHint: "删除型号不会影响现有项目的参数快照。",
   cameraPreviewNote:
     "采用相同内参投影。Marker 符号放大便于查看，遮挡点以红色显示；诊断数值使用实际像素直径。",
@@ -827,7 +827,7 @@ const en: Record<keyof typeof zh, string> = {
   replace: "Replace",
   newProjectConfirm: "Create empty project",
   resetDemo: "Open demo project",
-  appVersion: "SceneLab v1.4",
+  appVersion: "SceneLab v1.4.1",
   deleteModelHint: "Deleting a model does not affect existing project snapshots.",
   cameraPreviewNote:
     "Uses the same intrinsics. Marker symbols are enlarged for visibility; occluded points appear red. Diagnostics use actual pixel diameters.",
