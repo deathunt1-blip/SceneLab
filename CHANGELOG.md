@@ -5,7 +5,7 @@
 - 首个 macOS 分发版本：Apple Silicon arm64 / Intel x64，各提供 DMG 与 ZIP，要求 macOS 13+。
 - 新增 Mac 应用与窗口菜单，关闭窗口后可从 Dock 恢复，⌘Q 退出；编辑菜单按焦点区分文字与场景对象的复制、粘贴和撤销。
 - 内置离线中文 Mac 使用说明，修正应用包内帮助文件路径；项目、相机库与报告包可与 Windows v1.3 交换。
-- GitHub Actions 在两种架构的 macOS 机器构建，并在独立干净机器验证 DMG、ZIP、应用签名及启动渲染。
+- GitHub Actions 在两种架构的 macOS 机器构建，并在独立干净机器验证 DMG、ZIP、应用签名及启动渲染（arm64 原生，x64 通过 Rosetta；Intel 实机 GPU 待验证）。
 - Mac 包使用 ad-hoc 签名，未使用 Apple 开发者证书、未公证；Windows 分发包继续使用 v1.3.0。
 
 ## [1.3.0] - 2026-09-22

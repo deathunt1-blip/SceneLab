@@ -73,22 +73,7 @@ async function main() {
     SCENELAB_SMOKE_TEST: "1",
   };
   delete env.ELECTRON_RUN_AS_NODE;
-  // Intel CI VMs lack a Metal GPU. This opt-in is confined to the test
-  // process and its trusted local UI; distributed apps keep normal settings.
-  const softwareGL = process.env.SCENELAB_SMOKE_SOFTWARE_GL === "1";
-  if (softwareGL) {
-    // Chromium 151+ dynamically loads Vulkan for SwiftShader on macOS.
-    // Electron's Metal path does not need it. Use the CI image's Chrome
-    // runtime only for this GPU-less test, without modifying the signed app.
-    const libraries = "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Libraries";
-    assert.ok(fs.existsSync(path.join(libraries, "libvulkan.dylib")), "CI Vulkan loader missing");
-    env.DYLD_LIBRARY_PATH = libraries;
-    env.VK_ICD_FILENAMES = path.join(libraries, "vk_swiftshader_icd.json");
-  }
-  const args = softwareGL
-    ? ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
-    : [];
-  const child = spawn(path.join(app, "Contents/MacOS/SceneLab"), args, {
+  const child = spawn(path.join(app, "Contents/MacOS/SceneLab"), [], {
     env,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -128,7 +113,7 @@ async function main() {
           version,
           arch: process.arch,
           macOS: os.release(),
-        softwareGL,
+        execution: process.env.SCENELAB_SMOKE_EXECUTION || "native",
         signatureVerified: true,
           dmgVerified: true,
           ...result,

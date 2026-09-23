@@ -56,7 +56,7 @@ jobs:
           retention-days: 14
 
   verify:
-    name: Verify on clean Mac ${{ matrix.arch }}
+    name: Verify ${{ matrix.arch }} (${{ matrix.execution }})
     needs: build
     strategy:
       fail-fast: false
@@ -64,22 +64,28 @@ jobs:
         include:
           - arch: arm64
             runner: macos-15
+            execution: native
           - arch: x64
-            runner: macos-15-intel
+            runner: macos-15
+            execution: rosetta
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Prepare Intel translation on the graphics-capable Mac
+        if: matrix.execution == 'rosetta'
+        run: softwareupdate --install-rosetta --agree-to-license
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
+          architecture: ${{ matrix.arch }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: scenelab-macos-${{ matrix.arch }}
           path: release/build
       - name: Verify DMG, ZIP and packaged app startup
         env:
-          SCENELAB_SMOKE_SOFTWARE_GL: ${{ matrix.arch == 'x64' && '1' || '0' }}
+          SCENELAB_SMOKE_EXECUTION: ${{ matrix.execution }}
         run: node scripts/smoke-mac.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
