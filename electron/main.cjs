@@ -67,7 +67,7 @@ function createWindow() {
             const canvas = document.querySelector('canvas');
             if (document.querySelector('#root button') && canvas && canvas.width > 0) {
               clearInterval(timer); resolve({ title: document.title, canvas: true, buttons: document.querySelectorAll('button').length });
-            } else if (Date.now() - started > 45000) { clearInterval(timer); reject(new Error('Scene did not render')); }
+            } else if (Date.now() - started > ${process.env.SCENELAB_SMOKE_EXECUTION === "rosetta" ? 120000 : 45000}) { clearInterval(timer); reject(new Error('Scene did not render')); }
           }, 250);
         })`);
         fs.writeFileSync(

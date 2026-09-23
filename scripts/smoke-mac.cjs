@@ -90,6 +90,7 @@ async function main() {
   });
   try {
     const started = Date.now();
+    const startupTimeout = process.env.SCENELAB_SMOKE_EXECUTION === "rosetta" ? 300000 : 90000;
     const resultFile = path.join(profile, "smoke-result.json");
     while (!fs.existsSync(resultFile)) {
       if (failure) throw failure;
@@ -97,7 +98,7 @@ async function main() {
         throw new Error(
           `App exited early: ${child.exitCode} ${child.signalCode}\n${logs}`,
         );
-      if (Date.now() - started > 90000)
+      if (Date.now() - started > startupTimeout)
         throw new Error(`Renderer startup timed out\n${logs}`);
       await delay(500);
     }

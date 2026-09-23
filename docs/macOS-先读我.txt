@@ -1,0 +1,26 @@
+SceneLab v1.3.1 · macOS
+
+系统要求：macOS 13 Ventura 或更新版本。
+M 系列芯片选 arm64，Intel 处理器选 x64。
+
+安装：打开对应 DMG，将 SceneLab 拖到 Applications，然后从“应用程序”打开。
+ZIP 为备用格式：完整解压并保留整个 SceneLab.app。不需要 Node.js。
+
+本版本使用 ad-hoc 签名，未使用 Apple 开发者证书、未经过 Apple 公证。
+首次被系统阻止时，确认来自本仓库后，在“系统设置 → 隐私与安全性”选择“仍要打开”。
+企业设备可能需要 IT 处理。无需关闭系统安全保护。
+Apple 说明：https://support.apple.com/zh-cn/guide/mac-help/mh40616/mac
+
+菜单“帮助 → 使用说明”打开内置中文手册，也可打开发布附件中的 HTML 说明。
+复制 / 粘贴 / 撤销：⌘C / ⌘V / ⌘Z；重做：⇧⌘Z。
+关闭窗口后点击 Dock 图标可恢复，⌘Q 完全退出。
+
+跨平台迁移：导出项目文件，再从相机参数库另外导出 JSON，到另一台电脑分别导入。
+本地数据：~/Library/Application Support/Camera Planner。请定期导出备份。
+
+下载：https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1
+Windows v1.3.0：https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0
+SHA256SUMS.txt 列出发布附件的 SHA-256。
+
+验证范围：M 系列原生启动；Intel 包通过 Rosetta 启动验证。Intel 实机 GPU 尚未验收。
+Intel 用户使用原生 x64 包，无需 Rosetta；Rosetta 仅用于构建机验证。
