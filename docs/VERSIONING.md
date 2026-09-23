@@ -16,6 +16,16 @@
 
 ## 发布流程
 
+### macOS（v1.3.1 起）
+
+在 macOS 13+ 上运行 `npm ci`、`npm test`，然后执行 `npm run package:mac -- --arm64` 或 `npm run package:mac -- --x64`。输出位于 `release/build`，包含 DMG 与 ZIP；Mac 指南来自仓库内 HTML，不依赖 Windows PDF 生成环境。`node scripts/smoke-mac.cjs` 在对应架构的 Mac 上验证归档和启动，使用独立临时用户目录与端口。
+
+`.github/workflows/macos.yml` 对 PR、版本标签和手动触发分别在原生 arm64 / Intel 构建机打包。验证任务在另一台干净且具备图形能力的 macOS 构建机解包运行，检查签名完整性、架构、版本、帮助资源、DMG 安装链接及实际渲染。arm64 原生运行；Intel CI 虚拟机缺少可用 GPU，因此 x64 安装包在 Apple Silicon 上通过 Rosetta 完成渲染检查。发布应用保持默认图形设置，不依赖测试机上的额外渲染库。此检查不等于 Intel 实机 GPU 验收，也不替代下载后的 Gatekeeper 和真实用户设备验证。
+
+先合并检查通过的 PR，为已验证的提交创建版本标签。标签工作流重新构建和换机验证，随后由 GitHub 构建机生成 SHA-256 清单、上传七个附件到草稿，并在逐项核对远端摘要和大小后公开 Release。只有发布任务获得仓库写权限，PR 构建没有发布权限。保留旧版本标签和附件，不覆盖已有发布；若上传中断，先检查草稿及其附件再重试，不能以覆盖正式版本的方式恢复。当前 Mac 分发采用 ad-hoc 签名，不能宣称 Apple 开发者签名或公证。Windows 最新分发版仍为 v1.3.0，其发布附件不覆盖。
+
+### Windows（当前 v1.3.0 分发流程）
+
 1. 更新版本号与 `CHANGELOG.md`，确认文档中的操作与界面一致。
 2. 在 Windows x64 环境安装依赖并验证：
 

@@ -32,7 +32,10 @@ for (const name of packages) {
 }
 fs.mkdirSync(path.join(root, "build/resources"), { recursive: true });
 fs.writeFileSync(path.join(root, "build/resources/THIRD-PARTY-NOTICES.txt"), notices);
-for (const file of ["output/pdf/SceneLab_v1.3_使用说明.pdf", "build/resources/icon.ico"]) {
+const requiredAssets = process.platform === "darwin"
+  ? ["docs/macOS-使用说明.html", "electron/icon.png"]
+  : ["output/pdf/SceneLab_v1.3_使用说明.pdf", "build/resources/icon.ico"];
+for (const file of requiredAssets) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Required release asset missing: ${file}`);
 }
 console.log(`Prepared SceneLab ${pkg.version}; application contains compiled UI and desktop host only.`);

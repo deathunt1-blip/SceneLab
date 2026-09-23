@@ -1,10 +1,20 @@
 # SceneLab v1.3
 
-光学动捕相机部署与理论精度仿真工作台，当前发布版本为 **v1.3（1.3.0）**。提供 Windows x64 安装版和免安装版，附中文 PDF 使用说明。此版本对应当前已实现功能，不代表原始 PRD 全部条目的最终验收。
+光学动捕相机部署与理论精度仿真工作台。**v1.3.1 新增 macOS 分发版**，提供 Apple Silicon 和 Intel 的 DMG / ZIP，内置中文使用说明；Windows 最新分发包仍为 v1.3.0。此版本对应当前已实现功能，不代表原始 PRD 全部条目的最终验收。
 
-[下载 v1.3.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
+[下载 macOS v1.3.1](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1) · [下载 Windows v1.3.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
+
+### macOS
+
+macOS **13 Ventura 或更新版本**：M 系列芯片选 `arm64`，Intel 选 `x64`。打开 DMG，将 SceneLab 拖到 Applications 后，从“应用程序”打开；ZIP 需完整解压，保留整个 `.app`。无需 Node.js，菜单“帮助 → 使用说明”可打开内置离线 HTML 手册。
+
+Mac 版使用 ad-hoc 签名，未使用 Apple 开发者证书，未公证。首次打开如被阻止，在“系统设置 → 隐私与安全性”按提示选择“仍要打开”；参见 [Apple 说明](https://support.apple.com/zh-cn/guide/mac-help/mh40616/mac)。企业策略限制时需 IT 处理。
+
+复制、粘贴、撤销等使用 ⌘ 键。关闭窗口后可点击 Dock 图标恢复，⌘Q 完全退出。数据位于 `~/Library/Application Support/Camera Planner`；Windows 与 Mac 通过项目文件及参数库 JSON 迁移，报告包格式不变。详细安装和操作步骤见 [Mac 使用说明](docs/macOS-使用说明.html)。
+
+### Windows
 
 发布文件位于 `release/SceneLab-v1.3/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
 

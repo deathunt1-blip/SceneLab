@@ -1,5 +1,13 @@
 # 更新记录
 
+## [1.3.1] - 2026-09-23
+
+- 首个 macOS 分发版本：Apple Silicon arm64 / Intel x64，各提供 DMG 与 ZIP，要求 macOS 13+。
+- 新增 Mac 应用与窗口菜单，关闭窗口后可从 Dock 恢复，⌘Q 退出；编辑菜单按焦点区分文字与场景对象的复制、粘贴和撤销。
+- 内置离线中文 Mac 使用说明，修正应用包内帮助文件路径；项目、相机库与报告包可与 Windows v1.3 交换。
+- GitHub Actions 在两种架构的 macOS 机器构建，并在独立干净机器验证 DMG、ZIP、应用签名及启动渲染（arm64 原生，x64 通过 Rosetta；Intel 实机 GPU 待验证）。
+- Mac 包使用 ad-hoc 签名，未使用 Apple 开发者证书、未公证；Windows 分发包继续使用 v1.3.0。
+
 ## [1.3.0] - 2026-09-22
 
 - 新增本机技术报告包导出：manifest、当前方案、分析摘要及六张核心 PNG，格式版本独立为 1.0。
@@ -43,6 +51,7 @@
 
 已知边界：结果为理论位置 RMS；成像为几何仿真，未模拟曝光等光学过程。本版未数字签名，没有自动升级或账号同步。完整边界见 README 和使用说明。
 
+[1.3.1]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1
 [1.3.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0
 [1.2.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.2.0
 [1.1.0]: https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.1.0
