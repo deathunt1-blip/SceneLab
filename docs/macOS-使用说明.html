@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SceneLab v1.3.1 · macOS 使用说明</title>
+<title>SceneLab v1.4.0 · macOS 使用说明</title>
 <style>
   body{font:16px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#22393d;background:#f2f6f5;margin:0}
   main{max-width:880px;margin:40px auto;padding:40px;background:white;border-radius:18px}
@@ -15,13 +15,13 @@
 </style>
 <main>
 <p class="intro">SCENELAB / MACOS / 2026-09-23</p>
-<h1>SceneLab v1.3.1 使用说明</h1>
+<h1>SceneLab v1.4.0 使用说明</h1>
 <p>光学动捕相机部署与理论精度仿真工作台。支持 Apple Silicon 和 Intel Mac，要求 macOS 13 Ventura 或更新系统，无需安装 Node.js。场景、相机库和分析功能与 Windows v1.3 共用。</p>
 <h2>1. 选择与安装</h2>
 <table><tr><th>“关于本机”显示</th><th>下载文件</th></tr>
-<tr><td>芯片：Apple M 系列</td><td>SceneLab-1.3.1-macOS-arm64.dmg</td></tr>
-<tr><td>处理器：Intel</td><td>SceneLab-1.3.1-macOS-x64.dmg</td></tr></table>
-<ol><li>从 <a href="https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1">GitHub 发布页</a>下载对应 DMG。</li>
+<tr><td>芯片：Apple M 系列</td><td>SceneLab-1.4.0-macOS-arm64.dmg</td></tr>
+<tr><td>处理器：Intel</td><td>SceneLab-1.4.0-macOS-x64.dmg</td></tr></table>
+<ol><li>从 <a href="https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0">GitHub 发布页</a>下载对应 DMG。</li>
 <li>打开 DMG，把 <strong>SceneLab</strong> 拖到 <strong>Applications（应用程序）</strong>，然后推出磁盘映像。</li>
 <li>从“应用程序”打开 SceneLab。也可下载对应 ZIP，解压后将整个 SceneLab.app 移到“应用程序”。请勿拆开应用包或在 DMG 内长期运行。</li></ol>
 <div class="notice">此版本使用临时（ad-hoc）签名校验应用包完整性，未使用 Apple 开发者证书签名，也未经过 Apple 公证。首次打开可能被系统阻止。确认下载来自本仓库后，在“系统设置 → 隐私与安全性”中找到 SceneLab 的提示，选择“仍要打开”，按系统提示确认。公司管理的 Mac 可能需要 IT 处理。详见 <a href="https://support.apple.com/zh-cn/guide/mac-help/mh40616/mac">Apple 打开未知开发者应用的说明</a>。</div>
@@ -35,6 +35,12 @@
 <li>相机成像预览中的“放大查看像素”支持缩放和平移，8× 起显示像素网格，最高 64×；P3 双目分别查看左右目。</li>
 <li>进入“技术报告”查看部署、覆盖、精度和逐相机成像。点击“打印 / 保存 PDF”，在 macOS 打印窗口的 PDF 菜单保存。</li>
 <li>点击“导出技术报告包”生成 <code>.scenelab-report</code> ZIP，内含当前方案、分析摘要和六张核心 PNG，可选各相机二维视图及内部诊断。</li></ol>
+<h2>自动部署 / Auto Deploy（v1.4）</h2>
+<p>顶部“自动部署”与原有“阵列部署”分别保留。设置场地、Marker、精度与覆盖目标，选择型号、数量、安装方式、层数和优化目标。自动数量搜索为 8–64 台；范围模式最多 200 台。双目计 1 台设备、2 路观测。</p>
+<p>点击“开始搜索”后，程序在后台 Worker 内粗筛、优化并以正式采样间距验证决赛候选。可查看进度或取消。候选三维视图、覆盖和精度热图独立于当前场景；不同目标选中同一候选时合并说明。中心 / 活动高度权重只影响搜索，最终比例始终按全场未加权样本统计。</p>
+<p>达不到目标时仍会返回“最佳尝试”，解释 Marker 过小、遮挡对象、工作距离等限制，并显示最多 3 次放宽条件的真实精算对比。搜索不是全局最优保证；“最少相机”指本轮已验证的范围。超过 120 万正式采样点时会提示调整，不会用粗筛数据替代。</p>
+<p>默认“创建新方案”保留原方案，也可替换全部当前相机或追加；推荐结构可选。应用后每个对象仍能自由编辑，整次应用可用 ⌘Z 撤销。应用目标方案使用规划尺寸与 Marker / 精度设置；请重新运行分析，特别是追加或不创建推荐结构时。</p>
+<p>左侧可展开“Kimi 助手”：填写自己的密钥与可用模型，启用并保存。解析只发送需求、规划条件和型号名称，先展示校验过的草稿供检查；解释只整理已验证事实。密钥由系统加密，保存在本机用户数据目录，不进入工程、报告或分发包。AI 默认关闭，无 API 仍可完整离线规划。不要分享整个用户数据目录。</p>
 <h2>3. 鼠标、快捷键与窗口</h2>
 <p>三维视图：右键拖动旋转，中键拖动平移，滚轮缩放。建议使用带滚轮和中键的鼠标；触控板双指点按可唤出右键菜单，滚动可缩放，视角按钮可切换俯视、前视、侧视。</p>
 <table><tr><th>操作</th><th>Mac 快捷键</th></tr>
@@ -53,7 +59,7 @@
 <h2>4. 保存、迁移与备份</h2>
 <p>项目和相机库自动保存在当前 Mac 用户的 <code>~/Library/Application Support/Camera Planner</code>。这个历史目录名用于保持版本兼容。清理应用数据会丢失本地内容，程序目录本身不包含个人项目。</p>
 <p>在 Windows 与 Mac 之间迁移时，先<strong>导出项目文件</strong>（<code>.cameraplanner.json</code>），再从相机参数库<strong>导出 JSON</strong>，到另一台电脑分别打开项目、导入参数库。项目里的相机参数快照随项目保留，但自定义参数库需要单独迁移。分析结果不持久化，重新打开后会计算。</p>
-<p>没有账号同步或自动升级。更新前导出备份并退出应用，然后替换“应用程序”中的 SceneLab.app。Windows 分发版本仍可从 <a href="https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0">v1.3.0 发布页</a>下载。</p>
+<p>没有账号同步或自动升级。更新前导出备份并退出应用，然后替换“应用程序”中的 SceneLab.app。Windows 分发版本仍可从 <a href="https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0">v1.4.0 发布页</a>下载。</p>
 <h2>5. 结果含义与常见问题</h2>
 <ul><li>软件是部署与理论精度仿真工具，结果需结合现场标定和实测验证，不是相机采集客户端。</li><li>Marker 最小像素阈值在相机参数中设置；成像预览是几何投影，不模拟实际曝光、光斑和检测算法。</li><li>覆盖/精度统计使用全部采样点；细采样热图会合并显示，计算上限为 120 万点。</li><li>提示端口被占用时，先退出其他 SceneLab 或 Camera Planner 桌面实例再打开。本程序仅在本机 <code>127.0.0.1:5178</code> 提供界面。</li><li>报告包导出要求分析与当前场景一致；提示结果过期时，重新运行分析后再导出。</li></ul>
 <p class="intro">更多功能与理论边界见 <a href="https://github.com/deathunt1-blip/SceneLab">项目 README</a>。本说明随应用离线提供，浏览器打印可保存为 PDF。</p>

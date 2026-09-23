@@ -82,7 +82,7 @@ jobs:
           node scripts/prepare-mac-release.cjs
       - name: Create draft and upload attachments
         run: |
-          gh release create "$RELEASE_TAG" --verify-tag --draft --title "SceneLab $RELEASE_TAG for macOS" --notes-file "docs/$RELEASE_TAG-更新说明.md"
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "SceneLab $RELEASE_TAG — Auto Deploy" --notes-file "docs/$RELEASE_TAG-更新说明.md"
           gh release upload "$RELEASE_TAG" release/mac-distribution/*
       - name: Verify every uploaded SHA-256 before publishing
         run: |

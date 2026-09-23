@@ -20,6 +20,8 @@ import {
 import { makeProject, validateProject } from "./project/data";
 import { reconcileAnalysisView } from "./simulation/volume";
 import { pasteObjects } from "./project/clipboard";
+import { applyToProject, type ApplyOptions } from "./autoDeploy/apply";
+import type { Candidate, Constraints } from "./autoDeploy/types";
 const models = readLibrary();
 const KEY = "camera-planner.project.v1";
 let initialProject: Project;
@@ -44,6 +46,7 @@ export interface AppState {
   toast: string;
   libraryOpen: boolean;
   arrayOpen: boolean;
+  autoDeployOpen: boolean;
   view: "perspective" | "orthographic" | "top" | "front" | "side";
   tool: "translate" | "rotate" | "scale";
   space: "world" | "local";
@@ -78,6 +81,12 @@ export interface AppState {
   loadProject: (p: Project) => void;
   addScheme: () => void;
   switchScheme: (id: string) => void;
+  applyDeployment: (
+    source: Scheme,
+    constraints: Constraints,
+    candidate: Candidate,
+    options: ApplyOptions,
+  ) => void;
 }
 export const activeScheme = (state: Pick<AppState, "project">) =>
   state.project.schemes.find((s) => s.id === state.project.activeSchemeId)!;
@@ -93,6 +102,7 @@ export const useStore = create<AppState>((set, get) => ({
   toast: storageStatus.error,
   libraryOpen: false,
   arrayOpen: false,
+  autoDeployOpen: false,
   view: "perspective",
   tool: "translate",
   space: "world",
@@ -372,5 +382,31 @@ export const useStore = create<AppState>((set, get) => ({
     const p = structuredClone(get().project);
     p.activeSchemeId = id;
     get().loadProject(p);
+  },
+  applyDeployment: (source, constraints, candidate, options) => {
+    const previous = get().project;
+    const { project, selected } = applyToProject(
+      previous,
+      source,
+      constraints,
+      candidate,
+      options,
+    );
+    validateProject(project);
+    persist(KEY, project);
+    set({
+      project,
+      selected,
+      past: [...get().past.slice(-39), previous],
+      future: [],
+      result: null,
+      point: null,
+      clip: constraints.boundary[2],
+      autoDeployOpen: false,
+      mode: "design",
+      layer: "none",
+      focusTick: get().focusTick + 1,
+      toast: storageStatus.error || "adApplied",
+    });
   },
 }));

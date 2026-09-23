@@ -65,6 +65,12 @@ export interface SceneObject {
   diameter?: number;
   group?: string;
   mount?: string;
+  deployment?: {
+    plannerVersion: string;
+    mountType: string;
+    side?: string;
+    layer: number;
+  };
   markers?: { position: Vec3; diameter: number }[];
 }
 export interface Settings {

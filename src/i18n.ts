@@ -1,5 +1,7 @@
 import { useStore } from "./store";
+import { adZh, adEn } from "./autoDeploy/messages";
 const zh = {
+  ...adZh,
   exportReportPackage: "导出技术报告包",
   packageSubtitle: "导出工程数据与图片，供其他软件读取",
   packageNoAnalysis: "当前方案尚未运行分析。请先运行分析后再导出技术报告包。",
@@ -393,7 +395,7 @@ const zh = {
   replace: "替换",
   newProjectConfirm: "创建空白项目",
   resetDemo: "打开演示项目",
-  appVersion: "SceneLab v1.3",
+  appVersion: "SceneLab v1.4",
   deleteModelHint: "删除型号不会影响现有项目的参数快照。",
   cameraPreviewNote:
     "采用相同内参投影。Marker 符号放大便于查看，遮挡点以红色显示；诊断数值使用实际像素直径。",
@@ -411,6 +413,7 @@ const zh = {
   minCameraNote: "至少 2 个有效视点且几何非退化时才输出精度。",
 };
 const en: Record<keyof typeof zh, string> = {
+  ...adEn,
   exportReportPackage: "Export report package",
   packageSubtitle: "Export engineering data and images for other software",
   packageNoAnalysis:
@@ -824,7 +827,7 @@ const en: Record<keyof typeof zh, string> = {
   replace: "Replace",
   newProjectConfirm: "Create empty project",
   resetDemo: "Open demo project",
-  appVersion: "SceneLab v1.3",
+  appVersion: "SceneLab v1.4",
   deleteModelHint: "Deleting a model does not affect existing project snapshots.",
   cameraPreviewNote:
     "Uses the same intrinsics. Marker symbols are enlarged for visibility; occluded points appear red. Diagnostics use actual pixel diameters.",

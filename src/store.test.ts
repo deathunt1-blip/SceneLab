@@ -2,6 +2,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import type { AppState } from "./store";
 import { createP3Model, newModel, storageStatus } from "./camera/repository";
 import { makeCamera, makeObject, makeProject, validateProject } from "./project/data";
+import { defaultConstraints } from "./autoDeploy/constraints";
+import { generateCandidate, initialParameters } from "./autoDeploy/candidateGenerator";
 
 let useStore: typeof import("./store").useStore;
 let entries: Map<string, string>;
@@ -27,6 +29,34 @@ beforeEach(() => {
 });
 
 describe("scene clipboard and history", () => {
+  it("applies auto deployment as one undoable transaction, then redoes editable cameras", () => {
+    const original = structuredClone(state().project),
+      source = original.schemes[0],
+      m = newModel();
+    const c = { ...defaultConstraints(source), countMode: "exact" as const, count: 16 };
+    const candidate = generateCandidate(
+      source,
+      c,
+      m,
+      initialParameters(c, m, "ceiling", 16),
+    );
+    expect(candidate.feasible).toBe(true);
+    state().applyDeployment(source, c, candidate, {
+      mode: "new",
+      structures: true,
+      name: "Automatic",
+    });
+    expect(state().project.schemes.length).toBe(original.schemes.length + 1);
+    expect(state().result).toBeNull();
+    const applied = structuredClone(state().project);
+    state().undo();
+    expect(state().project).toEqual(original);
+    state().redo();
+    expect(state().project).toEqual(applied);
+    expect(() =>
+      validateProject(JSON.parse(entries.get("camera-planner.project.v1")!)),
+    ).not.toThrow();
+  });
   it("groups mixed assets, persists names, renames, copies and undoes the whole operation", () => {
     const originals = state().project.schemes[0].objects;
     const ids = [originals[0].id, originals.find((o) => o.kind === "box")!.id];
