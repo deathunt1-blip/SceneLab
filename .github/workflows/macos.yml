@@ -86,7 +86,10 @@ jobs:
           gh release upload "$RELEASE_TAG" release/mac-distribution/*
       - name: Verify every uploaded SHA-256 before publishing
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > release/mac-uploaded.json
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.tag_name == env.RELEASE_TAG and .draft == true) | .id')"
+          [[ "$release_id" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > release/mac-uploaded.json
+          gh api "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" > release/mac-uploaded-assets.json
           node scripts/verify-mac-release.cjs
           gh release edit "$RELEASE_TAG" --draft=false --latest
 

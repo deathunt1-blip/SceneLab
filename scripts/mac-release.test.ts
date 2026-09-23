@@ -16,6 +16,7 @@ function verify(change: (release: any) => void = () => {}) {
     mkdirSync(path.join(dir, "release"));
     writeFileSync(path.join(dir, "release/mac-inventory.json"), JSON.stringify(expected));
     writeFileSync(path.join(dir, "release/mac-uploaded.json"), JSON.stringify(release));
+    writeFileSync(path.join(dir, "release/mac-uploaded-assets.json"), JSON.stringify(release.assets));
     return spawnSync(process.execPath, [path.join(root, "scripts/verify-mac-release.cjs")], { cwd: dir, encoding: "utf8" });
   } finally {
     if (!dir.startsWith(tmpRoot + path.sep) || !path.basename(dir).startsWith("scenelab-release-test-")) throw new Error("Unsafe test cleanup path");
