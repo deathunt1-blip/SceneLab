@@ -16,6 +16,7 @@ import type { SceneObject, Vec3 } from "../models";
 import { analyzePoint, worldMarkers, viewCount } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
 import { buildHeatmapCells } from "./heatmap";
+import { currentResult } from "../simulation/currentResult";
 import { pickSceneObjects, pickCandidate, pickableMeshes } from "./picking";
 type Runtime = {
   renderer: THREE.WebGLRenderer;
@@ -79,10 +80,11 @@ export function Viewport() {
   const runtimeRef = useRef<Runtime | null>(null);
   if (runtimeRef.current) runtime = runtimeRef.current;
   const state = useStore(),
-    scheme = activeScheme(state);
+    scheme = activeScheme(state),
+    result = currentResult(scheme, state.result);
   const heatmapCells = useMemo(
-    () => (state.result ? buildHeatmapCells(state.result, state.clip) : []),
-    [state.result, state.clip],
+    () => (result ? buildHeatmapCells(result, state.clip) : []),
+    [result, state.clip],
   );
   useEffect(() => {
     if (!host.current) return;
@@ -389,7 +391,7 @@ export function Viewport() {
         rt.transform.attach(pivot);
       }
     }
-    if (state.result && state.result.schemeId === scheme.id && state.layer !== "none") {
+    if (result && state.layer !== "none") {
       const mesh = new THREE.InstancedMesh(
         new THREE.BoxGeometry(1, 1, 1),
         new THREE.MeshBasicMaterial({
@@ -449,7 +451,7 @@ export function Viewport() {
     state.selected,
     state.frustums,
     state.layer,
-    state.result,
+    result,
     state.clip,
     state.opacity,
     state.tool,

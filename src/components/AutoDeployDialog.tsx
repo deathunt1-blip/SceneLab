@@ -530,6 +530,12 @@ export function AutoDeployDialog() {
                   </span>
                 </div>
                 {dirty && <p className="ad-alert">{t("adDirty")}</p>}
+                {output.recommendations.length > 0 &&
+                  !output.recommendations.some((r) => r.metrics.meetsTarget) && (
+                    <p className="ad-alert" role="status">
+                      {t("adNoMinimum")}
+                    </p>
+                  )}
                 {!output.recommendations.length && (
                   <div className="ad-empty">
                     <h2>{t("adInfeasible")}</h2>

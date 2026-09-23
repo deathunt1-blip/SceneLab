@@ -74,6 +74,8 @@ export const adZh = {
   adSeconds: "秒",
   adMeets: "达到目标",
   adBestEffort: "最佳尝试 · 目标未全部达到",
+  adNoMinimum:
+    "尚未找到满足目标的方案，无法给出最少相机数量。下列台数只是未达标尝试的配置，不代表场地需要这么多台；请核对相机内参、Marker 像素阈值及观测条件。",
   adInfeasible: "安装不可行",
   adNoMount: "给定约束下，候选结构无法容纳所需相机。请调整数量、安装方式或场地。",
   adPreviewOnly: "候选预览 · 不修改场景",
@@ -223,6 +225,8 @@ export const adEn: Record<keyof typeof adZh, string> = {
   adProfile_coverage: "Coverage first",
   adProfile_accuracy: "Accuracy first",
   adProfile_minimum: "Minimum cameras",
+  adNoMinimum:
+    "No plan met the targets, so a minimum camera count is not established. Counts below describe unsuccessful attempts, not how many cameras this venue requires. Check intrinsics, marker pixel thresholds and observation conditions.",
   adWeighting: "Spatial weighting",
   adWeight_center: "Center priority",
   adWeight_uniform: "Uniform",

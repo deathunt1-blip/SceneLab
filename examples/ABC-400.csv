@@ -1,2 +1,2 @@
 manufacturer,model_name,resolution_width,resolution_height,hfov_deg,vfov_deg,focal_length_mm,min_working_distance_m,max_working_distance_m,minimum_marker_pixels,default_pixel_localization_error_px,input_mode,notes
-Custom,ABC-400,4096,3072,70,58,8,0.5,20,4,0.1,basic,"PRD example, synthetic parameters only."
+Custom,ABC-400,4096,3072,70,58,8,0.5,20,1.5,0.1,basic,"PRD example, synthetic parameters only."

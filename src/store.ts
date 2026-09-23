@@ -18,6 +18,7 @@ import {
   writeLibrary,
 } from "./camera/repository";
 import { makeProject, validateProject } from "./project/data";
+import { migrateProjectMarkerDefaults } from "./camera/markerDefault";
 import { reconcileAnalysisView } from "./simulation/volume";
 import { pasteObjects } from "./project/clipboard";
 import { applyToProject, type ApplyOptions } from "./autoDeploy/apply";
@@ -29,6 +30,11 @@ try {
   const raw = readStored(KEY);
   initialProject = raw ? JSON.parse(raw) : makeProject(models[0]);
   validateProject(initialProject);
+  const migrated = migrateProjectMarkerDefaults(initialProject);
+  if (migrated !== initialProject) {
+    initialProject = migrated;
+    persist(KEY, initialProject);
+  }
 } catch {
   preserveUnreadable(KEY);
   storageStatus.error = "projectCorrupt";
@@ -357,6 +363,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   loadProject: (p) => {
     validateProject(p);
+    p = migrateProjectMarkerDefaults(p);
     persist(KEY, p);
     set({
       project: p,

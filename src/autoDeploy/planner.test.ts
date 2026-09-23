@@ -242,6 +242,8 @@ describe("verified offline planning", () => {
   }, 30000);
   it("G/H: returns best effort for an underconstrained large scene, with shared-profile reasons and measured trials", () => {
     const { s, m, c } = setup(scene([30, 20, 8], 2));
+    m.minimum_marker_pixels = 4;
+    c.profile = "minimum";
     const out = planDeployment({ scheme: s, models: [m], constraints: c });
     expect(out.recommendations.length).toBeGreaterThan(0);
     expect(out.recommendations.every((r) => !r.metrics.meetsTarget)).toBe(true);
@@ -255,7 +257,7 @@ describe("verified offline planning", () => {
       out.trials.every((t) => t.before.validVoxels > 0 && t.after.validVoxels > 0),
     ).toBe(true);
     expect(new Set(out.recommendations.flatMap((r) => r.profiles))).toEqual(
-      new Set(profiles),
+      new Set(profiles.filter((p) => p !== "minimum")),
     );
   }, 30000);
   it("rejects too many formal voxels before starting; never silently coarsens final metrics", () => {

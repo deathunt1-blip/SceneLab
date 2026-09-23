@@ -29,6 +29,7 @@ export interface CameraModel {
   max_working_distance_m: number | null;
   default_pixel_localization_error_px: number;
   minimum_marker_pixels: number;
+  marker_threshold_version?: 1;
   distortion_model: "none" | "brown";
   distortion_parameters: [number, number, number, number, number];
   source: "preset" | "user" | "imported" | "calibration";

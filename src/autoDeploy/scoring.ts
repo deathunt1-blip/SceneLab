@@ -101,7 +101,8 @@ export function comparePlans(
   return utility(a) - utility(b) || count;
 }
 export function rank(plans: Evaluation[], c: Constraints, profile: Profile) {
-  return [...plans].sort(
+  // A failed attempt cannot establish a minimum required camera count.
+  return plans.filter((p) => profile !== "minimum" || p.metrics.meetsTarget).sort(
     (a, b) =>
       comparePlans(b, a, c, profile) || a.candidate.id.localeCompare(b.candidate.id),
   );

@@ -43,6 +43,7 @@ import { download } from "./camera/repository";
 import { makeProject } from "./project/data";
 import { add, rotate } from "./simulation/math";
 import { useSimulation } from "./simulation/useSimulation";
+import { currentResult } from "./simulation/currentResult";
 import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
 import { viewCount } from "./simulation/engine";
@@ -67,8 +68,8 @@ export default function App() {
     [capturing, setCapturing] = useState(false),
     [projectMenu, setProjectMenu] = useState(false),
     [inspectorOpen, setInspectorOpen] = useState(false);
-  const r = st.result,
-    current = r?.schemeId === s.id && r.revision === s.revision;
+  const r = currentResult(s, st.result),
+    current = r !== null;
   const cameras = s.objects.filter((o) => o.kind === "camera" && o.enabled).length;
   const exportProject = () => {
     download(
@@ -647,7 +648,7 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                {r && !current && (
+                {st.result && !current && (
                   <div className="stale-badge">
                     <Circle size={10} />
                     {t("outdated")}
@@ -668,7 +669,7 @@ export default function App() {
                   {t("navigation")}
                 </div>
               </div>
-              <div className={"dashboard " + (r && !current ? "stale" : "")}>
+              <div className="dashboard">
                 <div className="dashboard-heading">
                   <span>
                     <ChartNoAxesCombined size={15} />
@@ -741,7 +742,7 @@ export default function App() {
           <span className={"status-dot " + (!current ? "pending" : "")} />
           {st.progress !== null
             ? t("running")
-            : r
+            : st.result
               ? current
                 ? t("ready")
                 : t("outdated")

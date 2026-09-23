@@ -51,6 +51,17 @@ const scene = (): Scheme => ({
   },
 });
 describe("projection and observation", () => {
+  it("requires 1.5 px in both projected dimensions, not 1.5 square pixels of area", () => {
+    const s = scene();
+    const m = { ...newModel(), input_mode: "advanced" as const, fx: 1000, fy: 2000 };
+    s.objects = [makeCamera(m, [0, 0, 0], [0, 1, 0])];
+    const c = prepareCameras(s)[0];
+    expect(observe([0, 10, 0], 15, c, []).valid).toBe(true);
+    expect(observe([0, 10, 0], 14.9, c, []).reasons).toContain("small");
+    c.model = { ...m, fx: 2000, fy: 1000 };
+    expect(observe([0, 10, 0], 15, c, []).valid).toBe(true);
+    expect(observe([0, 10, 0], 14.9, c, []).reasons).toContain("small");
+  });
   it("maps the optical axis to principal point and world Z upwards in the image", () => {
     const s = scene();
     s.objects = [makeCamera(model(), [0, 0, 0], [0, 1, 0])];
@@ -123,13 +134,9 @@ describe("geometry and theoretical accuracy", () => {
     s.objects = cameraArray(model(), "circle", 4, 4, 3, [0, 0, 1]);
     const a = accuracy([0, 0, 1], prepareCameras(s))!;
     s.objects.forEach(
-      (c) =>
-        (c.camera_model_snapshot!.default_pixel_localization_error_px *= 2),
+      (c) => (c.camera_model_snapshot!.default_pixel_localization_error_px *= 2),
     );
-    expect(accuracy([0, 0, 1], prepareCameras(s))!.rms).toBeCloseTo(
-      a.rms * 2,
-      8,
-    );
+    expect(accuracy([0, 0, 1], prepareCameras(s))!.rms).toBeCloseTo(a.rms * 2, 8);
   });
   it("rejects coincident camera centers and single-camera geometry", () => {
     const s = scene(),
@@ -150,14 +157,8 @@ describe("geometry and theoretical accuracy", () => {
         b = [...p] as Vec3;
       a[k] += 1e-5;
       b[k] -= 1e-5;
-      expect(j[0][k]).toBeCloseTo(
-        (project(a, c).u - project(b, c).u) / 2e-5,
-        5,
-      );
-      expect(j[1][k]).toBeCloseTo(
-        (project(a, c).v - project(b, c).v) / 2e-5,
-        5,
-      );
+      expect(j[0][k]).toBeCloseTo((project(a, c).u - project(b, c).u) / 2e-5, 5);
+      expect(j[1][k]).toBeCloseTo((project(a, c).v - project(b, c).v) / 2e-5, 5);
     }
   });
   it("accounts for radial distortion consistently", () => {
@@ -206,9 +207,7 @@ describe("volume and rigid bodies", () => {
     expect(r.coverage).toEqual([0, 0, 0, 0, 0]);
     expect(r.meanError).toBeNull();
     expect(r.invalidAccuracy).toBe(7);
-    s.objects = [
-      { ...makeObject("box"), position: [0, 0, 1], size: [3, 3, 3] },
-    ];
+    s.objects = [{ ...makeObject("box"), position: [0, 0, 1], size: [3, 3, 3] }];
     expect(simulate(s).averageCount).toBe(0);
   });
   it("keeps hidden cameras in simulation but excludes disabled ones", () => {
@@ -262,15 +261,12 @@ describe("data boundaries", () => {
   it("imports atomically and rejects invalid schema/data", () => {
     const m = model();
     expect(
-      importModels(JSON.stringify({ schema_version: 1, models: [m] }), false)[0]
-        .id,
+      importModels(JSON.stringify({ schema_version: 1, models: [m] }), false)[0].id,
     ).not.toBe(m.id);
     expect(() =>
       importModels(JSON.stringify({ schema_version: 2, models: [m] }), false),
     ).toThrow("schemaUnsupported");
-    expect(() =>
-      importModels(JSON.stringify([m, { ...m, fx: -1 }]), false),
-    ).toThrow();
+    expect(() => importModels(JSON.stringify([m, { ...m, fx: -1 }]), false)).toThrow();
     const p = makeProject(m);
     p.schemes[0].objects[0].position = [NaN, 0, 0];
     expect(() => validateProject(p)).toThrow();
