@@ -17,7 +17,7 @@ function guidePath({ platform, packaged, resourcesPath, exePath, sourceDir }) {
   }
   return packaged
     ? path.join(path.dirname(exePath), "使用说明.pdf")
-    : path.resolve(sourceDir, "../output/pdf/SceneLab_v1.3_使用说明.pdf");
+    : path.resolve(sourceDir, "../output/pdf/SceneLab_v1.4_使用说明.pdf");
 }
 
 function menuTemplate(platform, { openGuide, showAbout, edit }) {
@@ -59,10 +59,16 @@ function menuTemplate(platform, { openGuide, showAbout, edit }) {
         click: () => edit(command),
       })),
     },
-    { label: "窗口", submenu: [
-      { role: "minimize" }, { role: "zoom" }, { role: "close" },
-      { type: "separator" }, { role: "front" },
-    ] },
+    {
+      label: "窗口",
+      submenu: [
+        { role: "minimize" },
+        { role: "zoom" },
+        { role: "close" },
+        { type: "separator" },
+        { role: "front" },
+      ],
+    },
     help,
   ];
 }

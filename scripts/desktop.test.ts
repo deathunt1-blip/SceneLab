@@ -68,6 +68,7 @@ function preload(editable: boolean, handled: boolean) {
   }
   vm.runInNewContext(readFileSync(path.resolve("electron/preload.cjs"), "utf8"), {
     require: () => ({
+      contextBridge: { exposeInMainWorld: vi.fn() },
       ipcRenderer: {
         on: (_channel: string, fn: typeof receive) => {
           receive = fn;

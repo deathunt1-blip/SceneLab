@@ -50,6 +50,7 @@ import { Inspector } from "./components/Inspector";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
 import { ArrayDialog } from "./components/ArrayDialog";
+import { AutoDeployDialog } from "./components/AutoDeployDialog";
 import { Report, type ReportImage } from "./components/Report";
 import { fmt } from "./components/Common";
 import type { Vec3 } from "./models";
@@ -483,6 +484,15 @@ export default function App() {
                 {t("array")}
               </button>
               <button
+                onClick={() => {
+                  cancel();
+                  st.set({ autoDeployOpen: true });
+                }}
+              >
+                <Aperture size={15} />
+                {t("autoDeploy")}
+              </button>
+              <button
                 className={"icon-button " + (st.frustums ? "active" : "")}
                 title={t("frustums")}
                 onClick={() => st.set({ frustums: !st.frustums })}
@@ -753,6 +763,7 @@ export default function App() {
       </footer>
       {st.libraryOpen && <CameraLibrary />}
       {st.arrayOpen && <ArrayDialog />}
+      {st.autoDeployOpen && <AutoDeployDialog />}
       {st.toast && (
         <div className="toast">
           <span>{t(st.toast)}</span>

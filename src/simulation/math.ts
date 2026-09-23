@@ -1,17 +1,8 @@
 import type { Vec3 } from "../models";
-export const add = (a: Vec3, b: Vec3): Vec3 => [
-  a[0] + b[0],
-  a[1] + b[1],
-  a[2] + b[2],
-];
-export const sub = (a: Vec3, b: Vec3): Vec3 => [
-  a[0] - b[0],
-  a[1] - b[1],
-  a[2] - b[2],
-];
+export const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+export const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 export const mul = (a: Vec3, s: number): Vec3 => [a[0] * s, a[1] * s, a[2] * s];
-export const dot = (a: Vec3, b: Vec3) =>
-  a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+export const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[1] * b[2] - a[2] * b[1],
   a[2] * b[0] - a[0] * b[2],
@@ -64,12 +55,25 @@ export function rotate(v: Vec3, r: Vec3): Vec3 {
     b[2],
   ];
 }
+// Occlusion calls this twice per ray against the same stationary structures.
+// Cache precisely the existing basis calculation; retain the original dot-product
+// order and invalidate on in-place edits as well as newly allocated rotations.
+const inverseAxes = new WeakMap<Vec3, { angles: Vec3; axes: [Vec3, Vec3, Vec3] }>();
 export function unrotate(v: Vec3, r: Vec3): Vec3 {
-  return [
-    dot(v, rotate([1, 0, 0], r)),
-    dot(v, rotate([0, 1, 0], r)),
-    dot(v, rotate([0, 0, 1], r)),
-  ];
+  let cached = inverseAxes.get(r);
+  if (
+    !cached ||
+    cached.angles[0] !== r[0] ||
+    cached.angles[1] !== r[1] ||
+    cached.angles[2] !== r[2]
+  ) {
+    cached = {
+      angles: [...r],
+      axes: [rotate([1, 0, 0], r), rotate([0, 1, 0], r), rotate([0, 0, 1], r)],
+    };
+    inverseAxes.set(r, cached);
+  }
+  return [dot(v, cached.axes[0]), dot(v, cached.axes[1]), dot(v, cached.axes[2])];
 }
 export function inverseSymmetric(
   h: number[],
@@ -89,9 +93,7 @@ export function inverseSymmetric(
   const inv = [c00, c01, c02, c01, c11, c12, c02, c12, c22].map((v) => v / det);
   const norm = (m: number[]) =>
     Math.max(
-      ...[0, 3, 6].map(
-        (i) => Math.abs(m[i]) + Math.abs(m[i + 1]) + Math.abs(m[i + 2]),
-      ),
+      ...[0, 3, 6].map((i) => Math.abs(m[i]) + Math.abs(m[i + 1]) + Math.abs(m[i + 2])),
     );
   const condition = norm(a) * norm(inv);
   if (!Number.isFinite(condition) || condition > 1e10) return null;

@@ -1,12 +1,14 @@
-# SceneLab v1.3
+# SceneLab v1.4
 
-光学动捕相机部署与理论精度仿真工作台。**v1.3.1 新增 macOS 分发版**，提供 Apple Silicon 和 Intel 的 DMG / ZIP，内置中文使用说明；Windows 最新分发包仍为 v1.3.0。此版本对应当前已实现功能，不代表原始 PRD 全部条目的最终验收。
+光学动捕相机部署与理论精度仿真工作台。**v1.4 新增 Auto Deploy 自动部署**：按约束生成候选，复用物理仿真引擎精算，预览、比较并应用为可编辑方案。本次发布 Windows x64；Mac 暂保留 v1.3.1。Kimi 助手为可选功能，离线规划无需 API。
 
-[下载 macOS v1.3.1](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1) · [下载 Windows v1.3.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.0) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
+[下载 v1.4.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.4.0) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
 
 ### macOS
+
+Mac v1.4 暂不发布。已有版本请到 [v1.3.1 发布页](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.3.1) 下载，其中尚不包含自动部署。
 
 macOS **13 Ventura 或更新版本**：M 系列芯片选 `arm64`，Intel 选 `x64`。打开 DMG，将 SceneLab 拖到 Applications 后，从“应用程序”打开；ZIP 需完整解压，保留整个 `.app`。无需 Node.js，菜单“帮助 → 使用说明”可打开内置离线 HTML 手册。
 
@@ -16,7 +18,7 @@ Mac 版使用 ad-hoc 签名，未使用 Apple 开发者证书，未公证。首�
 
 ### Windows
 
-发布文件位于 `release/SceneLab-v1.3/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
+发布文件位于 `release/SceneLab-v1.4/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
 
 安装版与免安装版都使用当前用户的 `%APPDATA%\\Camera Planner`，以兼容已有项目。免安装是无需安装，不表示数据随程序目录移动。分享项目和自定义相机库时，分别导出项目文件与参数库 JSON。发布包不包含本机用户数据。
 
@@ -65,6 +67,14 @@ npm run dev
 - 新建或编辑后，点击底部固定的「保存型号」。保存状态在弹窗内显示；存储失败时保留草稿并提示导出备份。
 
 ## 已实现
+
+### v1.4 自动部署
+
+- 独立规划窗口：配置场地、Marker、精度、覆盖、型号、数量、安装、层数、中心权重及活动高度。
+- 模板候选、粗筛、局部优化、数量细化与正式仿真，全部在 Worker 中执行，可取消。复用既有仿真模型；缓存重复的实体坐标变换，保持原计算数值。
+- 多目标推荐、最佳尝试、真实诊断和放宽条件试验；全场统计不受优化权重影响。
+- 临时三维相机及热图预览，应用为新方案 / 替换 / 追加，支持分组与一次撤销。
+- 桌面 Kimi 可选：自然语言先转换为校验过的条件草稿，解释只整理验证过的事实。密钥由系统加密，默认为关闭状态，不随分发包共享。使用详见 [自动部署说明](docs/AUTO_DEPLOY.md)。
 
 ### v1.3 技术报告包
 

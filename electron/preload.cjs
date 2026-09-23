@@ -1,6 +1,17 @@
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, contextBridge } = require("electron");
 // Sandboxed preloads cannot require local modules. Keep this small allowlist
-// aligned with platform.cjs; expose no Node or IPC API to the page.
+// aligned with platform.cjs; expose no generic Node or IPC API to the page.
+const invokeAI = async (action, ...args) => {
+  const response = await ipcRenderer.invoke(`scenelab:ai:${action}`, ...args);
+  if (response?.error) throw new Error(response.error);
+  return response;
+};
+contextBridge.exposeInMainWorld("sceneLabAI", {
+  status: () => invokeAI("status"),
+  configure: (config) => invokeAI("configure", config),
+  request: (operation, payload) => invokeAI("request", operation, payload),
+  cancel: () => invokeAI("cancel"),
+});
 const editKeys = {
   undo: ["z", false],
   redo: ["z", true],

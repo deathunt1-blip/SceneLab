@@ -1,10 +1,22 @@
-const { app, BrowserWindow, session, shell, Menu, ipcMain, dialog } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  session,
+  shell,
+  Menu,
+  ipcMain,
+  dialog,
+  safeStorage,
+  net,
+} = require("electron");
+const { createAIService, trustedSender } = require("./ai.cjs");
 const { guidePath, menuTemplate, editKeys } = require("./platform.cjs");
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 let server;
 let mainWindow;
+let ai;
 app.setName("SceneLab");
 if (process.platform === "win32") app.setAppUserModelId("com.scenelab.desktop");
 // Keep the existing profile and origin when upgrading from Camera Planner.
@@ -43,13 +55,12 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      ...(process.platform === "darwin"
-        ? { preload: path.join(__dirname, "preload.cjs") }
-        : {}),
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
   mainWindow = win;
   win.on("closed", () => {
+    ai?.cancel();
     if (mainWindow === win) mainWindow = null;
   });
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -66,7 +77,11 @@ function createWindow() {
           const timer = setInterval(() => {
             const canvas = document.querySelector('canvas');
             if (document.querySelector('#root button') && canvas && canvas.width > 0) {
-              clearInterval(timer); resolve({ title: document.title, canvas: true, buttons: document.querySelectorAll('button').length });
+              clearInterval(timer);
+              Promise.resolve(window.sceneLabAI?.status()).then(ai => {
+                if (!ai || typeof ai.enabled !== 'boolean' || typeof ai.hasKey !== 'boolean') return reject(new Error('Desktop AI bridge unavailable'));
+                resolve({ title: document.title, canvas: true, buttons: document.querySelectorAll('button').length, ai });
+              }).catch(reject);
             } else if (Date.now() - started > ${process.env.SCENELAB_SMOKE_EXECUTION === "rosetta" ? 120000 : 45000}) { clearInterval(timer); reject(new Error('Scene did not render')); }
           }, 250);
         })`);
@@ -109,6 +124,38 @@ ipcMain.on("scenelab:native-edit", (event, command) => {
 });
 if (ownsInstance)
   app.whenReady().then(() => {
+    ai = createAIService({
+      directory: app.getPath("userData"),
+      safeStorage,
+      fetch: (url, options) => net.fetch(url, options),
+    });
+    // Optional one-time local provisioning. Never expose the key to the renderer or logs.
+    if (process.env.SCENELAB_KIMI_API_KEY) {
+      try {
+        ai.configure({
+          key: process.env.SCENELAB_KIMI_API_KEY,
+          enabled: true,
+          model: "kimi-k2.6",
+        });
+      } catch {
+        /* Configuration can be completed in the local AI settings. */
+      }
+      delete process.env.SCENELAB_KIMI_API_KEY;
+    }
+    for (const action of ["status", "configure", "request", "cancel"]) {
+      ipcMain.handle(`scenelab:ai:${action}`, async (event, ...args) => {
+        if (!trustedSender(event, mainWindow, origin)) return { error: "aiUnavailable" };
+        try {
+          return await ai[action](...args);
+        } catch (error) {
+          return {
+            error: ["aiEncryption", "aiInvalidConfig"].includes(error?.message)
+              ? error.message
+              : "aiUnavailable",
+          };
+        }
+      });
+    }
     Menu.setApplicationMenu(
       Menu.buildFromTemplate(
         menuTemplate(process.platform, {
@@ -187,4 +234,7 @@ if (ownsInstance)
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
-app.on("before-quit", () => server?.close());
+app.on("before-quit", () => {
+  ai?.cancel();
+  server?.close();
+});
