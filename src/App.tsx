@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Aperture,
   ArrowDownToLine,
@@ -47,6 +47,7 @@ import { currentResult } from "./simulation/currentResult";
 import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
 import { viewCount } from "./simulation/engine";
+import { sharedCoverageStats } from "./simulation/sharedVisibility";
 import { Inspector } from "./components/Inspector";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
@@ -71,6 +72,11 @@ export default function App() {
   const r = currentResult(s, st.result),
     current = r !== null;
   const cameras = s.objects.filter((o) => o.kind === "camera" && o.enabled).length;
+  const sharedStats = useMemo(
+    () => (r && current ? sharedCoverageStats(r, st.coverageMinimum, st.clip) : null),
+    [r, current, st.coverageMinimum, st.clip],
+  );
+  const sharedMaximum = Math.max(st.coverageMinimum, sharedStats?.maxCameraCount ?? 0);
   const exportProject = () => {
     download(
       st.project.name + ".cameraplanner.json",
@@ -87,6 +93,12 @@ export default function App() {
       layer: state.layer,
       analysisTimestamp: state.result?.timestamp,
       clip: state.clip,
+      coverageMinimum: state.layer === "coverage" ? state.coverageMinimum : 0,
+      coverageMaximum:
+        state.layer === "coverage" && state.result
+          ? sharedCoverageStats(state.result, state.coverageMinimum, state.clip)
+              .maxCameraCount
+          : undefined,
       revision:
         state.layer === "none" ||
         (state.result?.schemeId === state.project.activeSchemeId &&
@@ -597,21 +609,85 @@ export default function App() {
                   </button>
                 </div>
                 {st.layer !== "none" && (
-                  <div className="heatmap-controls">
+                  <div
+                    className={
+                      "heatmap-controls " +
+                      (st.layer === "coverage" ? "shared-controls" : "")
+                    }
+                  >
+                    {st.layer === "coverage" && (
+                      <div className="shared-visibility">
+                        <strong>{t("sharedVisibility")}</strong>
+                        <label className="shared-number">
+                          <span>{t("minimumCameras")}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="65535"
+                            step="1"
+                            aria-label={t("minimumCameras")}
+                            value={st.coverageMinimum}
+                            onChange={(e) =>
+                              st.set({ coverageMinimum: Number(e.target.value) })
+                            }
+                          />
+                        </label>
+                        <button
+                          className="shared-reset"
+                          aria-pressed={st.coverageMinimum === 0}
+                          onClick={() => st.set({ coverageMinimum: 0 })}
+                        >
+                          {t("allCoverage")}
+                        </button>
+                        {st.coverageMinimum > 0 && (
+                          <>
+                            <p className="shared-hint">{t("sharedHint")}</p>
+                            {sharedStats ? (
+                              <div className="shared-statistics" role="status">
+                                <span>
+                                  {t("sharedPercent")}{" "}
+                                  <b>{fmt(sharedStats.percent, 1)}%</b>
+                                </span>
+                                <span>
+                                  {t("sharedVolume")}{" "}
+                                  <b>{fmt(sharedStats.volume, 1)} m³</b>
+                                </span>
+                                {sharedStats.matchingSamples === 0 && (
+                                  <p>{t("sharedNoRegion")}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="shared-hint">{t("sharedRecalculate")}</p>
+                            )}
+                            <p className="shared-hint">{t("sharedSampleScope")}</p>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <div className="legend-title">
-                      {t(st.layer === "coverage" ? "legendCoverage" : "legendAccuracy")}
+                      {t(
+                        st.layer === "coverage"
+                          ? st.coverageMinimum > 0
+                            ? "validCameraCount"
+                            : "legendCoverage"
+                          : "legendAccuracy",
+                      )}
                       <span>
                         {st.layer === "coverage"
-                          ? `0 – ${Math.max(5, viewCount(s))}`
+                          ? st.coverageMinimum > 0
+                            ? `${st.coverageMinimum} – ${sharedMaximum}`
+                            : `0 – ${Math.max(5, viewCount(s))}`
                           : "mm"}
                       </span>
                     </div>
                     <div className={"gradient " + st.layer} />
                     <div className="legend-labels">
-                      <span>{st.layer === "coverage" ? "0" : "0.00"}</span>
+                      <span>{st.layer === "coverage" ? st.coverageMinimum : "0.00"}</span>
                       <span>
                         {st.layer === "coverage"
-                          ? Math.max(5, viewCount(s))
+                          ? st.coverageMinimum > 0
+                            ? sharedMaximum
+                            : Math.max(5, viewCount(s))
                           : fmt(s.settings.errorThreshold * 2)}
                       </span>
                     </div>
@@ -691,10 +767,25 @@ export default function App() {
                       icon: Camera,
                     },
                     {
-                      label: "coverage3",
-                      value: fmt(r?.coverage[2], 1),
+                      label:
+                        st.layer === "coverage" && st.coverageMinimum > 0
+                          ? "sharedVisibility"
+                          : "coverage3",
+                      displayLabel:
+                        st.layer === "coverage" && st.coverageMinimum > 0
+                          ? `≥${st.coverageMinimum} ${t("cameraUnit")} · ${t("sharedVisibility")}`
+                          : undefined,
+                      value: fmt(
+                        st.layer === "coverage" && st.coverageMinimum > 0
+                          ? sharedStats?.percent
+                          : r?.coverage[2],
+                        1,
+                      ),
                       unit: "%",
-                      sub: `≥2: ${fmt(r?.coverage[1], 1)}%  ·  ≥4: ${fmt(r?.coverage[3], 1)}%`,
+                      sub:
+                        st.layer === "coverage" && st.coverageMinimum > 0
+                          ? `Z ≤ ${st.clip.toFixed(1)} m · ${fmt(sharedStats?.volume, 1)} m³`
+                          : `≥2: ${fmt(r?.coverage[1], 1)}%  ·  ≥4: ${fmt(r?.coverage[3], 1)}%`,
                       icon: Layers,
                     },
                     {
@@ -711,10 +802,10 @@ export default function App() {
                       sub: `≤0.3 mm: ${fmt(r?.under03, 1)}%`,
                       icon: Ruler,
                     },
-                  ].map(({ label, value, unit, sub, icon: Icon }) => (
+                  ].map(({ label, displayLabel, value, unit, sub, icon: Icon }) => (
                     <div className="metric" key={label}>
                       <span className="metric-label">
-                        {t(label)}
+                        {displayLabel ?? t(label)}
                         <Icon size={14} />
                       </span>
                       <strong>

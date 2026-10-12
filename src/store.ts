@@ -59,6 +59,7 @@ export interface AppState {
   snap: number;
   angleSnap: number;
   layer: "none" | "coverage" | "accuracy";
+  coverageMinimum: number;
   clip: number;
   opacity: number;
   frustums: boolean;
@@ -115,6 +116,13 @@ export const useStore = create<AppState>((set, get) => ({
   snap: 0.1,
   angleSnap: 5,
   layer: "none",
+  coverageMinimum: Math.max(
+    0,
+    Math.min(
+      65535,
+      Math.floor(Number(readStored("camera-planner.coverage-minimum")) || 0),
+    ),
+  ),
   clip: Math.min(
     1.5,
     initialProject.schemes.find((s) => s.id === initialProject.activeSchemeId)!
@@ -130,6 +138,22 @@ export const useStore = create<AppState>((set, get) => ({
   clipboardGroups: [],
   pasteCount: 0,
   set: (patch) => {
+    if (patch.coverageMinimum !== undefined) {
+      patch = {
+        ...patch,
+        coverageMinimum: Number.isFinite(patch.coverageMinimum)
+          ? Math.max(0, Math.min(65535, Math.floor(patch.coverageMinimum)))
+          : 0,
+      };
+      try {
+        localStorage.setItem(
+          "camera-planner.coverage-minimum",
+          String(patch.coverageMinimum),
+        );
+      } catch {
+        storageStatus.error = "storageError";
+      }
+    }
     if (patch.lang)
       try {
         localStorage.setItem("camera-planner.language", patch.lang);

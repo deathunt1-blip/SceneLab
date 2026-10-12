@@ -2,6 +2,17 @@ import { useStore } from "./store";
 import { adZh, adEn } from "./autoDeploy/messages";
 const zh = {
   ...adZh,
+  sharedVisibility: "公共可视区",
+  minimumCameras: "最少同时可见相机数",
+  allCoverage: "全部覆盖",
+  cameraUnit: "台相机",
+  validCameraCount: "同时可见相机数",
+  sharedVolume: "达标体积",
+  sharedPercent: "覆盖比例",
+  sharedHint: "仅显示达到所选台数的区域；双目设备计为1台。",
+  sharedNoRegion: "当前高度范围内没有达标区域。",
+  sharedSampleScope: "按当前高度裁切内的有效采样体积统计；0代表全部覆盖。",
+  sharedRecalculate: "请运行分析以查看公共可视区。",
   exportReportPackage: "导出技术报告包",
   packageSubtitle: "导出工程数据与图片，供其他软件读取",
   packageNoAnalysis: "当前方案尚未运行分析。请先运行分析后再导出技术报告包。",
@@ -415,6 +426,18 @@ const zh = {
 };
 const en: Record<keyof typeof zh, string> = {
   ...adEn,
+  sharedVisibility: "Shared visible region",
+  minimumCameras: "Minimum visible cameras",
+  allCoverage: "All coverage",
+  cameraUnit: "cameras",
+  validCameraCount: "Visible cameras",
+  sharedVolume: "Shared volume",
+  sharedPercent: "Coverage",
+  sharedHint: "Show regions meeting the threshold. A stereo device counts as one camera.",
+  sharedNoRegion: "No region meets this threshold within the height cut.",
+  sharedSampleScope:
+    "Percentage of valid sampled volume within the height cut. Zero shows all coverage.",
+  sharedRecalculate: "Run analysis to view the shared region.",
   exportReportPackage: "Export report package",
   packageSubtitle: "Export engineering data and images for other software",
   packageNoAnalysis:

@@ -324,3 +324,29 @@ describe("analysis point lifecycle", () => {
     expect(state().project.schemes[1].settings.voxel).toBe(0.1);
   });
 });
+
+describe("common visibility view preference", () => {
+  it("changes and remembers the threshold without changing cameras, revision or analysis", () => {
+    const before = state().project;
+    const revision = before.schemes[0].revision;
+    const result = state().result;
+    state().set({ coverageMinimum: 8 });
+    expect(state().coverageMinimum).toBe(8);
+    expect(entries.get("camera-planner.coverage-minimum")).toBe("8");
+    state().set({ coverageMinimum: 3 });
+    expect(state().coverageMinimum).toBe(3);
+    expect(state().project).toBe(before);
+    expect(state().project.schemes[0].revision).toBe(revision);
+    expect(state().result).toBe(result);
+    state().set({ coverageMinimum: 0 });
+    expect(state().coverageMinimum).toBe(0);
+  });
+  it("normalizes invalid numeric input rather than rendering a fractional threshold", () => {
+    state().set({ coverageMinimum: 8.9 });
+    expect(state().coverageMinimum).toBe(8);
+    state().set({ coverageMinimum: -4 });
+    expect(state().coverageMinimum).toBe(0);
+    state().set({ coverageMinimum: NaN });
+    expect(state().coverageMinimum).toBe(0);
+  });
+});

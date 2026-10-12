@@ -135,6 +135,8 @@ export interface SimulationResult {
   voxelSize: Vec3;
   positions: Float32Array;
   counts: Uint16Array;
+  /** Valid physical cameras per sample; stereo eyes from one device count once. */
+  cameraCounts: Uint16Array;
   errors: Float32Array;
   validVoxels: number;
   excludedVoxels: number;
