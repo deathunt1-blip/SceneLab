@@ -15,8 +15,9 @@ import { basis, dot, rad } from "../simulation/math";
 import type { SceneObject, Vec3 } from "../models";
 import { analyzePoint, worldMarkers, viewCount } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
-import { buildHeatmapCells } from "./heatmap";
+import { buildHeatmapCells, MAX_HEATMAP_CELLS, type HeatmapCell } from "./heatmap";
 import { currentResult } from "../simulation/currentResult";
+import { sharedCoverageStats } from "../simulation/sharedVisibility";
 import { pickSceneObjects, pickCandidate, pickableMeshes } from "./picking";
 type Runtime = {
   renderer: THREE.WebGLRenderer;
@@ -26,6 +27,8 @@ type Runtime = {
   transform: TransformControls;
   content: THREE.Group;
   objects: Map<string, THREE.Group>;
+  heatmap?: THREE.InstancedMesh;
+  heatmapCells?: HeatmapCell[];
   draw: () => void;
   resize: () => void;
   focus: () => void;
@@ -83,8 +86,16 @@ export function Viewport() {
     scheme = activeScheme(state),
     result = currentResult(scheme, state.result);
   const heatmapCells = useMemo(
-    () => (result ? buildHeatmapCells(result, state.clip) : []),
-    [result, state.clip],
+    () =>
+      result
+        ? buildHeatmapCells(
+            result,
+            state.clip,
+            MAX_HEATMAP_CELLS,
+            state.layer === "coverage" ? state.coverageMinimum : 0,
+          )
+        : [],
+    [result, state.clip, state.layer, state.coverageMinimum],
   );
   useEffect(() => {
     if (!host.current) return;
@@ -297,6 +308,15 @@ export function Viewport() {
         return;
       }
       if (st.mode === "analysis") {
+        if (st.layer === "coverage" && st.coverageMinimum > 0) {
+          // Diagnose the sample represented by a visible qualifying cell.
+          // An empty hole must not select a hidden low-coverage region.
+          const hit = rt.heatmap ? ray.intersectObject(rt.heatmap)[0] : undefined;
+          const cell =
+            hit?.instanceId !== undefined ? rt.heatmapCells?.[hit.instanceId] : undefined;
+          if (cell) st.set({ point: [...cell.samplePosition], selected: [] });
+          return;
+        }
         const target = new THREE.Vector3();
         const s = activeScheme(st);
         if (
@@ -349,6 +369,8 @@ export function Viewport() {
     disposeGroup(rt.content);
     rt.content.clear();
     rt.objects.clear();
+    rt.heatmap = undefined;
+    rt.heatmapCells = [];
     rt.content.add(createEnvironment(scheme));
     for (const o of scheme.objects) {
       const g = makeSceneObject(o, state.selected.includes(o.id), state.frustums);
@@ -391,7 +413,7 @@ export function Viewport() {
         rt.transform.attach(pivot);
       }
     }
-    if (result && state.layer !== "none") {
+    if (result && state.layer !== "none" && heatmapCells.length) {
       const mesh = new THREE.InstancedMesh(
         new THREE.BoxGeometry(1, 1, 1),
         new THREE.MeshBasicMaterial({
@@ -402,7 +424,14 @@ export function Viewport() {
         heatmapCells.length,
       );
       const matrix = new THREE.Matrix4();
-      const maximum = Math.max(5, viewCount(scheme));
+      const minimum = state.layer === "coverage" ? state.coverageMinimum : 0;
+      const maximum =
+        minimum > 0
+          ? Math.max(
+              minimum,
+              sharedCoverageStats(result, minimum, state.clip).maxCameraCount,
+            )
+          : Math.max(5, viewCount(scheme));
       heatmapCells.forEach((cell, j) => {
         matrix.makeScale(...cell.size);
         matrix.setPosition(...cell.position);
@@ -410,10 +439,10 @@ export function Viewport() {
         mesh.setColorAt(
           j,
           heatColor(
-            cell.count,
+            minimum > 0 ? cell.cameraCount - minimum + 1 : cell.count,
             cell.error,
             state.layer,
-            maximum,
+            minimum > 0 ? maximum - minimum + 1 : maximum,
             scheme.settings.errorThreshold * 2,
           ),
         );
@@ -421,6 +450,8 @@ export function Viewport() {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       rt.content.add(mesh);
+      rt.heatmap = mesh;
+      rt.heatmapCells = heatmapCells;
     }
     if (
       state.point &&
@@ -451,6 +482,7 @@ export function Viewport() {
     state.selected,
     state.frustums,
     state.layer,
+    state.coverageMinimum,
     result,
     state.clip,
     state.opacity,

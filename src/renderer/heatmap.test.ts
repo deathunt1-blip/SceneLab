@@ -22,6 +22,7 @@ function samples(boundary: Vec3, step: number, exclude?: (index: Vec3) => boolea
     voxelSize,
     positions,
     counts: new Uint16Array(positions.length / 3).fill(8),
+    cameraCounts: new Uint16Array(positions.length / 3).fill(8),
     errors: new Float32Array(positions.length / 3).fill(0.25),
   };
 }
@@ -149,5 +150,40 @@ describe("heatmap spatial display", () => {
         1,
       ),
     ).toEqual([]);
+  });
+});
+
+describe("common camera region rendering", () => {
+  it("shows at least three or eight physical cameras and preserves original samples", () => {
+    const result = samples([4, 1, 1], 1);
+    result.counts = new Uint16Array([2, 4, 9, 12]);
+    result.cameraCounts = new Uint16Array([2, 3, 8, 10]);
+    const before = result.cameraCounts.slice();
+    expect(buildHeatmapCells(result, 1, 100, 3).map((c) => c.cameraCount)).toEqual([
+      3, 8, 10,
+    ]);
+    expect(buildHeatmapCells(result, 1, 100, 8).map((c) => c.cameraCount)).toEqual([
+      8, 10,
+    ]);
+    expect(buildHeatmapCells(result, 1, 100, 11)).toEqual([]);
+    expect(result.cameraCounts).toEqual(before);
+    expect(buildHeatmapCells(result, 1)).toHaveLength(4);
+  });
+  it("does not inflate a merged region by filtering failing neighbours before aggregation", () => {
+    const result = samples([2, 1, 1], 1);
+    result.cameraCounts = new Uint16Array([8, 2]);
+    expect(buildHeatmapCells(result, 1, 1, 8)).toEqual([]);
+    const unfiltered = buildHeatmapCells(result, 1, 1);
+    expect(unfiltered).toHaveLength(1);
+    expect(unfiltered[0].cameraCount).toBe(2);
+    expectFilled(unfiltered, result.boundary);
+  });
+  it("ignores cameras above the height cut when checking the common region", () => {
+    const result = samples([1, 1, 2], 1);
+    result.cameraCounts = new Uint16Array([8, 1]);
+    const cells = buildHeatmapCells(result, 0.5, 1, 8);
+    expect(cells).toHaveLength(1);
+    expect(cells[0].size[2]).toBe(0.5);
+    expect(buildHeatmapCells(result, 0, 1, 8)).toEqual([]);
   });
 });

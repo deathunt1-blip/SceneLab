@@ -3,12 +3,14 @@ import type { SimulationResult, Vec3 } from "../models";
 export const MAX_HEATMAP_CELLS = 60_000;
 type Samples = Pick<
   SimulationResult,
-  "boundary" | "voxelSize" | "positions" | "counts" | "errors"
+  "boundary" | "voxelSize" | "positions" | "counts" | "cameraCounts" | "errors"
 >;
 export interface HeatmapCell {
   position: Vec3;
   size: Vec3;
   count: number;
+  cameraCount: number;
+  samplePosition: Vec3;
   error: number;
 }
 
@@ -35,8 +37,9 @@ export function buildHeatmapCells(
   result: Samples,
   clip: number,
   limit = MAX_HEATMAP_CELLS,
+  minimumCameras = 0,
 ): HeatmapCell[] {
-  const { boundary, voxelSize, positions, counts, errors } = result;
+  const { boundary, voxelSize, positions, counts, cameraCounts, errors } = result;
   const height = Math.max(0, Math.min(clip, boundary[2]));
   if (!counts.length || height === 0) return [];
   const origin: Vec3 = [-boundary[0] / 2, -boundary[1] / 2, 0];
@@ -63,9 +66,15 @@ export function buildHeatmapCells(
     ) as Vec3;
     const key = group[0] + grid[0] * (group[1] + grid[1] * group[2]);
     const existing = cells.get(key);
+    const samplePosition = index.map(
+      (row, axis) => origin[axis] + (row + 0.5) * voxelSize[axis],
+    ) as Vec3;
     if (existing) {
       // Keep weak coverage and undefined accuracy visible when cells are merged.
       existing.count = Math.min(existing.count, counts[i]);
+      if (cameraCounts[i] < existing.cameraCount)
+        existing.samplePosition = samplePosition;
+      existing.cameraCount = Math.min(existing.cameraCount, cameraCounts[i]);
       existing.error = Math.max(existing.error, errors[i]); // NaN remains NaN.
       continue;
     }
@@ -83,8 +92,12 @@ export function buildHeatmapCells(
       position: lower.map((v, axis) => (v + upper[axis]) / 2) as Vec3,
       size: lower.map((v, axis) => upper[axis] - v) as Vec3,
       count: counts[i],
+      cameraCount: cameraCounts[i],
+      samplePosition,
       error: errors[i],
     });
   }
-  return [...cells.values()];
+  // Filter only after conservative aggregation: a good sample must not hide
+  // a failing neighbour and falsely mark the whole merged cell as qualifying.
+  return [...cells.values()].filter((cell) => cell.cameraCount >= minimumCameras);
 }
