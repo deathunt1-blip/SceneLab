@@ -210,20 +210,31 @@ export function Report({
                         {String(i + 1).padStart(2, "0")} · {t(img.view)} /{" "}
                         {t(img.layer === "none" ? "normal" : img.layer)} · Z ≤{" "}
                         {img.clip.toFixed(1)} m
+                        {img.layer === "coverage" && (img.coverageMinimum ?? 0) > 0 && (
+                          <>
+                            {" "}
+                            · {t("sharedVisibility")} ≥{img.coverageMinimum}{" "}
+                            {t("cameraUnit")}
+                          </>
+                        )}
                       </figcaption>
                       {img.layer !== "none" && (
                         <div className="report-legend">
                           <span>
                             {t(
                               img.layer === "coverage"
-                                ? "legendCoverage"
+                                ? (img.coverageMinimum ?? 0) > 0
+                                  ? "validCameraCount"
+                                  : "legendCoverage"
                                 : "legendAccuracy",
                             )}
                           </span>
                           <i className={"gradient " + img.layer} />
                           <span>
                             {img.layer === "coverage"
-                              ? `0 → ${Math.max(5, viewCount(s))}`
+                              ? (img.coverageMinimum ?? 0) > 0
+                                ? `${img.coverageMinimum} → ${Math.max(img.coverageMinimum!, img.coverageMaximum ?? 0)}`
+                                : `0 → ${Math.max(5, viewCount(s))}`
                               : `0 → ${s.settings.errorThreshold * 2} mm`}
                           </span>
                         </div>
