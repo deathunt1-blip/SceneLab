@@ -10,6 +10,7 @@ self.onmessage = ({ data }) => {
         transfer: [
           result.positions.buffer,
           result.counts.buffer,
+          result.cameraCounts.buffer,
           result.errors.buffer,
         ],
       },

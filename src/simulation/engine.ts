@@ -289,6 +289,7 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
   if (total > 1_200_000) throw new Error("voxelLimit");
   const positions = new Float32Array(total * 3),
     counts = new Uint16Array(total),
+    cameraCounts = new Uint16Array(total),
     errors = new Float32Array(total),
     cs = prepareCameras(s),
     obs = obstacles(s);
@@ -330,6 +331,9 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
           acc = accuracy(p, valid);
         positions.set(p, used * 3);
         counts[used] = valid.length;
+        cameraCounts[used] = new Set(
+          observations.filter((o) => o.valid).map((o) => o.cameraId),
+        ).size;
         errors[used] = acc?.rms ?? NaN;
         sumCount += valid.length;
         for (let k = 1; k <= 5; k++) if (valid.length >= k) coverage[k - 1]++;
@@ -363,6 +367,7 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
     voxelSize: [lx / ns[0], ly / ns[1], lz / ns[2]],
     positions: positions.slice(0, used * 3),
     counts: counts.slice(0, used),
+    cameraCounts: cameraCounts.slice(0, used),
     errors: errors.slice(0, used),
     validVoxels: used,
     excludedVoxels: excluded,
