@@ -10,6 +10,8 @@ export interface ReportImage {
   schemeId: string;
   clip: number;
   analysisTimestamp?: string;
+  coverageMinimum?: number;
+  coverageMaximum?: number;
 }
 export interface PackageOptions {
   cameraViews: boolean;
@@ -21,6 +23,9 @@ export interface ImageEntry {
   file: string;
   clip_m: number;
   image_size_px: [number, number];
+  minimum_cameras?: number;
+  maximum_cameras?: number;
+  coverage_count_unit?: "distinct physical cameras";
 }
 export interface Asset {
   path: string;

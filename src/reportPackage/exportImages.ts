@@ -49,6 +49,13 @@ export function exportImages(
       file,
       clip_m: image.clip,
       image_size_px: size,
+      ...(image.layer === "coverage" && (image.coverageMinimum ?? 0) > 0
+        ? {
+            minimum_cameras: image.coverageMinimum,
+            maximum_cameras: image.coverageMaximum,
+            coverage_count_unit: "distinct physical cameras" as const,
+          }
+        : {}),
     });
     assets.push({ path: file, data: bytes });
   };

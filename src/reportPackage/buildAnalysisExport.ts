@@ -1,10 +1,12 @@
 import type { Scheme, SimulationResult } from "../models";
 import { assertCurrentAnalysis, finiteOrNull } from "./validation";
+import { sharedCoverageStats } from "../simulation/sharedVisibility";
 
 export function buildAnalysisExport(
   scheme: Scheme,
   result: SimulationResult | null,
   diagnostics = false,
+  sharedView?: { minimum: number; clip: number },
 ) {
   assertCurrentAnalysis(scheme, result);
   return {
@@ -46,6 +48,18 @@ export function buildAnalysisExport(
       accuracy_metric: "theoretical 1-sigma 3D position RMS",
       coverage_unit: "viewpoints (stereo contributes up to two)",
     },
+    ...(sharedView && sharedView.minimum > 0
+      ? {
+          shared_visibility: {
+            minimum_cameras: sharedView.minimum,
+            count_unit: "distinct physical cameras",
+            clip_m: sharedView.clip,
+            ...sharedCoverageStats(result, sharedView.minimum, sharedView.clip),
+            denominator:
+              "valid sampled volume intersecting the height cut; excluded obstacles omitted",
+          },
+        }
+      : {}),
     ...(diagnostics
       ? {
           diagnostics: {

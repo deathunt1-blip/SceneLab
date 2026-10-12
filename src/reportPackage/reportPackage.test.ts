@@ -57,6 +57,7 @@ function fixture() {
     voxelSize: [0.4, 0.5, 0.25],
     positions: new Float32Array([0, 0, 1]),
     counts: new Uint16Array([4]),
+    cameraCounts: new Uint16Array([2]),
     errors: new Float32Array([0.21]),
     validVoxels: 42871,
     excludedVoxels: 3129,
@@ -296,5 +297,38 @@ describe("report package", () => {
     expect(safeName('..\\NUL: /?*<>"|. ')).not.toMatch(/[\\/:?*<>"|]|[. ]$/);
     expect(safeName("...")).toBe("SceneLab");
     expect(safeName("项目甲")).toBe("项目甲");
+  });
+});
+
+describe("shared visibility metadata", () => {
+  it("exports the physical camera threshold and clipped-volume statistics with coverage images", async () => {
+    const input = fixture();
+    input.images.forEach((image) => {
+      if (image.layer === "coverage") {
+        image.coverageMinimum = 8;
+        image.coverageMaximum = 12;
+      }
+    });
+    const output = await createPackage(input);
+    const zip = await JSZip.loadAsync(output.bytes);
+    const manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
+    const coverage = manifest.images.filter(
+      (image: { role: string }) => image.role === "coverage",
+    );
+    expect(coverage).toHaveLength(2);
+    expect(
+      coverage.every(
+        (image: { minimum_cameras: number; coverage_count_unit: string }) =>
+          image.minimum_cameras === 8 &&
+          image.coverage_count_unit === "distinct physical cameras",
+      ),
+    ).toBe(true);
+    const analysis = JSON.parse(await zip.file("analysis.json")!.async("string"));
+    expect(analysis.shared_visibility).toMatchObject({
+      minimum_cameras: 8,
+      count_unit: "distinct physical cameras",
+      percent: 0,
+    });
+    expect(analysis.coverage_percent.ge3).toBe(input.result!.coverage[2]);
   });
 });

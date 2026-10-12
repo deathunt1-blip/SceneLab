@@ -17,8 +17,16 @@ export async function createPackage(
   signal?.throwIfAborted();
   const projectData = buildProjectExport(project, source);
   const scheme = projectData.scheme;
-  const analysis = buildAnalysisExport(scheme, result, options.diagnostics);
   const images = exportImages(input.images, scheme, result);
+  const coverageImage = images.entries.find((image) => image.role === "coverage");
+  const analysis = buildAnalysisExport(
+    scheme,
+    result,
+    options.diagnostics,
+    coverageImage?.minimum_cameras
+      ? { minimum: coverageImage.minimum_cameras, clip: coverageImage.clip_m }
+      : undefined,
+  );
   const generatedAt = new Date().toISOString();
   const zip = new JSZip();
   const json = (path: string, data: unknown) =>
