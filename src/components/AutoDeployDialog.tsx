@@ -65,6 +65,7 @@ export function AutoDeployDialog() {
     JSON.stringify({
       ...value,
       coverageScaleMax: undefined,
+      coveragePalette: undefined,
       highlightCoverageThreshold: undefined,
       coverageThreshold: undefined,
     });
@@ -76,6 +77,7 @@ export function AutoDeployDialog() {
           ...output.constraints,
           coverageThreshold: output.constraints.minViews,
           coverageScaleMax: c.coverageScaleMax,
+          coveragePalette: c.coveragePalette,
           highlightCoverageThreshold: c.highlightCoverageThreshold,
         }),
       }

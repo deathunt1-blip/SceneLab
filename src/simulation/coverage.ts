@@ -1,9 +1,11 @@
 import type { Settings, SimulationResult, Vec3 } from "../models";
 
+export type CoveragePalette = "spectrum" | "blue";
 export interface CoverageSettings {
   coverageBasis: "imaging" | "trackingRange";
   coverageThreshold: number;
   coverageScaleMax: number;
+  coveragePalette: CoveragePalette;
   highlightCoverageThreshold: boolean;
   trackingRangeSource: "model" | "manual";
   trackingRangeOverrideM: number | null;
@@ -12,6 +14,7 @@ export const coverageDefaults: CoverageSettings = {
   coverageBasis: "imaging",
   coverageThreshold: 3,
   coverageScaleMax: 8,
+  coveragePalette: "spectrum",
   highlightCoverageThreshold: false,
   trackingRangeSource: "model",
   trackingRangeOverrideM: null,
@@ -22,6 +25,7 @@ export function coverageSettings(s: Partial<CoverageSettings>): CoverageSettings
     coverageBasis: s.coverageBasis ?? "imaging",
     coverageThreshold: s.coverageThreshold ?? 3,
     coverageScaleMax: s.coverageScaleMax ?? 8,
+    coveragePalette: s.coveragePalette ?? "spectrum",
     highlightCoverageThreshold: s.highlightCoverageThreshold ?? false,
     trackingRangeSource: s.trackingRangeSource ?? "model",
     trackingRangeOverrideM: s.trackingRangeOverrideM ?? null,
@@ -34,6 +38,7 @@ export function validCoverageSettings(s: Partial<CoverageSettings>) {
   return (
     ["imaging", "trackingRange"].includes(c.coverageBasis) &&
     ["model", "manual"].includes(c.trackingRangeSource) &&
+    ["spectrum", "blue"].includes(c.coveragePalette) &&
     Number.isInteger(c.coverageThreshold) &&
     c.coverageThreshold >= 1 &&
     c.coverageThreshold <= MAX_COVERAGE_VIEWS &&
@@ -77,6 +82,7 @@ export function coverageDisplayKey(s: Settings) {
     c.coverageBasis,
     c.coverageThreshold,
     c.coverageScaleMax,
+    c.coveragePalette,
     c.highlightCoverageThreshold,
     c.trackingRangeSource,
     c.trackingRangeOverrideM,

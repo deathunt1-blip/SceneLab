@@ -10,7 +10,8 @@
     "coverageScaleMax": 12,
     "highlightCoverageThreshold": true,
     "trackingRangeSource": "manual",
-    "trackingRangeOverrideM": 20
+    "trackingRangeOverrideM": 20,
+    "coveragePalette": "blue"
   },
   "legacy_defaults": {
     "coverageBasis": "imaging",
@@ -18,6 +19,7 @@
     "coverageScaleMax": 8,
     "highlightCoverageThreshold": false,
     "trackingRangeSource": "model",
-    "trackingRangeOverrideM": null
+    "trackingRangeOverrideM": null,
+    "coveragePalette": "spectrum"
   }
 }

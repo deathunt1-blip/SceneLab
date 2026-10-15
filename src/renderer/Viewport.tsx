@@ -419,6 +419,7 @@ export function Viewport() {
             scheme.settings.errorThreshold * 2,
             coverage.coverageThreshold,
             coverage.highlightCoverageThreshold,
+            coverage.coveragePalette,
           ),
         );
       });

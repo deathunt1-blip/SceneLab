@@ -218,6 +218,20 @@ describe("report package", () => {
     }));
     expect(exportImages(f.images, f.scheme, f.result).entries).toHaveLength(6);
   });
+  it("rejects heatmap captures from the other palette while keeping analysis current", () => {
+    const f = fixture();
+    const revision = f.scheme.revision;
+    f.scheme.settings.coveragePalette = "blue";
+    expect(f.scheme.revision).toBe(revision);
+    expect(() => exportImages(f.images, f.scheme, f.result)).toThrow(
+      "packageImagesMissing",
+    );
+    const fresh = f.images.map((i) => ({
+      ...i,
+      coverageDisplayKey: coverageDisplayKey(f.scheme.settings),
+    }));
+    expect(exportImages(fresh, f.scheme, f.result).entries).toHaveLength(6);
+  });
   it("includes only current manual images and assigns stable manual roles", () => {
     const f = fixture();
     f.images.push(

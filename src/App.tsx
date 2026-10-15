@@ -48,7 +48,11 @@ import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
 import { coverageSettings, coverageAt, coverageDisplayKey } from "./simulation/coverage";
 import { CameraInventory } from "./components/CameraInventory";
-import { CoverageControls, CoverageLegend } from "./components/CoverageControls";
+import {
+  CoverageControls,
+  CoverageLegend,
+  CoveragePaletteControl,
+} from "./components/CoverageControls";
 import { Inspector } from "./components/Inspector";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
@@ -624,6 +628,10 @@ export default function App() {
                     )}
                     {st.layer === "coverage" && (
                       <>
+                        <CoveragePaletteControl
+                          settings={s.settings}
+                          onChange={st.updateSettings}
+                        />
                         <CoverageLegend settings={s.settings} />
                         <details className="coverage-display-controls">
                           <summary>
@@ -633,6 +641,7 @@ export default function App() {
                             settings={s.settings}
                             onChange={st.updateSettings}
                             displayOnly
+                            hidePalette
                           />
                         </details>
                       </>

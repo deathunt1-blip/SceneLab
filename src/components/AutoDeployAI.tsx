@@ -84,6 +84,7 @@ export function AutoDeployAI({
     coverageBasis: "coverageBasis",
     coverageThreshold: "coverageThreshold",
     coverageScaleMax: "coverageScaleMax",
+    coveragePalette: "coveragePalette",
     highlightCoverageThreshold: "highlightCoverage",
     trackingRangeSource: "trackingRangeSource",
     trackingRangeOverrideM: "trackingDistance",

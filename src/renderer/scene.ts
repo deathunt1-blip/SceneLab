@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { SceneObject, Scheme, Vec3 } from "../models";
 import { basis, rad } from "../simulation/math";
+import { coveragePaletteColors } from "./coveragePalette";
 export function orient(group: THREE.Object3D, o: SceneObject) {
   group.position.set(...o.position);
   if (o.kind === "camera") {
@@ -419,6 +420,7 @@ export function heatColor(
   maxError: number,
   threshold = 3,
   highlight = false,
+  palette: import("../simulation/coverage").CoveragePalette = "spectrum",
 ) {
   if (layer === "accuracy") {
     if (!Number.isFinite(error)) return new THREE.Color("#c1cbd1");
@@ -430,7 +432,7 @@ export function heatColor(
   if (!count) return new THREE.Color("#a7b5bb");
   if (highlight && count < threshold) return new THREE.Color("#adbcc8");
   const t = Math.max(0, Math.min(1, count / Math.max(1, maxCount)));
-  const colors = ["#3a68c7", "#26bacc", "#41c89c", "#b8d850", "#efb64b", "#e76c4e"];
+  const colors = coveragePaletteColors(palette);
   const i = t * (colors.length - 1);
   return new THREE.Color(colors[Math.floor(i)]).lerp(
     new THREE.Color(colors[Math.ceil(i)]),

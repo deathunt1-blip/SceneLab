@@ -2,17 +2,20 @@ import type { Settings } from "../models";
 import { coverageSettings, MAX_COVERAGE_VIEWS } from "../simulation/coverage";
 import { useT } from "../i18n";
 import { Field, Num, Toggle } from "./Common";
+import { coverageGradient } from "../renderer/coveragePalette";
 
 export function CoverageControls({
   settings,
   onChange,
   displayOnly = false,
   hideThreshold = false,
+  hidePalette = false,
 }: {
   settings: Partial<Settings>;
   onChange: (patch: Partial<Settings>) => void;
   displayOnly?: boolean;
   hideThreshold?: boolean;
+  hidePalette?: boolean;
 }) {
   const t = useT(),
     c = coverageSettings(settings);
@@ -88,6 +91,7 @@ export function CoverageControls({
           />
         </Field>
       )}
+      {!hidePalette && <CoveragePaletteControl settings={settings} onChange={onChange} />}
       <Field label={t("coverageScaleMax")}>
         <Num
           aria-label={t("coverageScaleMax")}
@@ -122,12 +126,40 @@ export function CoverageControls({
   );
 }
 
+export function CoveragePaletteControl({
+  settings,
+  onChange,
+}: {
+  settings: Partial<Settings>;
+  onChange: (patch: Partial<Settings>) => void;
+}) {
+  const t = useT(),
+    c = coverageSettings(settings);
+  return (
+    <Field label={t("coveragePalette")}>
+      <select
+        aria-label={t("coveragePalette")}
+        value={c.coveragePalette}
+        onChange={(e) =>
+          onChange({ coveragePalette: e.target.value as typeof c.coveragePalette })
+        }
+      >
+        <option value="spectrum">{t("paletteSpectrum")}</option>
+        <option value="blue">{t("paletteBlue")}</option>
+      </select>
+    </Field>
+  );
+}
+
 export function CoverageLegend({ settings }: { settings: Partial<Settings> }) {
   const t = useT(),
     c = coverageSettings(settings);
   return (
     <div className="coverage-legend">
-      <div className="gradient coverage">
+      <div
+        className="gradient coverage"
+        style={{ background: coverageGradient(c.coveragePalette) }}
+      >
         <i
           className="coverage-target-tick"
           style={{ left: `${(100 * c.coverageThreshold) / c.coverageScaleMax}%` }}

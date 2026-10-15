@@ -3,6 +3,7 @@ import { Check, FileText, Printer } from "lucide-react";
 import { activeScheme, useStore } from "../store";
 import { translate, useT } from "../i18n";
 import { fmt } from "./Common";
+import { coverageGradient } from "../renderer/coveragePalette";
 import type { CameraEye, Language } from "../models";
 import {
   coverageSettings,
@@ -171,6 +172,14 @@ export function Report({
                 <b>≥{coverage.coverageThreshold}</b>
                 <span>{t("coverageScaleMax")}</span>
                 <b>0 → {coverage.coverageScaleMax}+</b>
+                <span>{t("coveragePalette")}</span>
+                <b>
+                  {t(
+                    coverage.coveragePalette === "blue"
+                      ? "paletteBlue"
+                      : "paletteSpectrum",
+                  )}
+                </b>
                 <span>{t("highlightCoverage")}</span>
                 <b>
                   {t(
@@ -287,7 +296,14 @@ export function Report({
                               : "legendAccuracy",
                           )}
                         </span>
-                        <i className={"gradient " + img.layer} />
+                        <i
+                          className={"gradient " + img.layer}
+                          style={
+                            img.layer === "coverage"
+                              ? { background: coverageGradient(coverage.coveragePalette) }
+                              : undefined
+                          }
+                        />
                         <span>
                           {img.layer === "coverage"
                             ? `0 → ${coverage.coverageScaleMax}+ · ${t("coverageTargetLine")} ≥${coverage.coverageThreshold}`
@@ -463,7 +479,7 @@ export function Report({
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.5.0{" "}
+              SCENELAB v1.5.1{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

@@ -18,6 +18,7 @@ export function buildAnalysisExport(
       coverage_basis: c.coverageBasis,
       coverage_threshold: c.coverageThreshold,
       coverage_scale_max: c.coverageScaleMax,
+      coverage_palette: c.coveragePalette,
       highlight_coverage_threshold: c.highlightCoverageThreshold,
       tracking_range_source: c.trackingRangeSource,
       tracking_range_override_m: c.trackingRangeOverrideM,
