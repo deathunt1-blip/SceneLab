@@ -46,7 +46,9 @@ import { useSimulation } from "./simulation/useSimulation";
 import { currentResult } from "./simulation/currentResult";
 import { Viewport, captureViewport } from "./renderer/Viewport";
 import { MAX_HEATMAP_CELLS } from "./renderer/heatmap";
-import { viewCount } from "./simulation/engine";
+import { coverageSettings, coverageAt, coverageDisplayKey } from "./simulation/coverage";
+import { CameraInventory } from "./components/CameraInventory";
+import { CoverageControls, CoverageLegend } from "./components/CoverageControls";
 import { Inspector } from "./components/Inspector";
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { CameraLibrary } from "./components/CameraLibrary";
@@ -70,7 +72,8 @@ export default function App() {
     [inspectorOpen, setInspectorOpen] = useState(false);
   const r = currentResult(s, st.result),
     current = r !== null;
-  const cameras = s.objects.filter((o) => o.kind === "camera" && o.enabled).length;
+  const cameras = s.objects.filter((o) => o.kind === "camera").length;
+  const coverage = coverageSettings(s.settings);
   const exportProject = () => {
     download(
       st.project.name + ".cameraplanner.json",
@@ -86,6 +89,7 @@ export default function App() {
       view: state.view,
       layer: state.layer,
       analysisTimestamp: state.result?.timestamp,
+      coverageDisplayKey: coverageDisplayKey(activeScheme(state).settings),
       clip: state.clip,
       revision:
         state.layer === "none" ||
@@ -602,21 +606,36 @@ export default function App() {
                       {t(st.layer === "coverage" ? "legendCoverage" : "legendAccuracy")}
                       <span>
                         {st.layer === "coverage"
-                          ? `0 – ${Math.max(5, viewCount(s))}`
+                          ? `0 – ${coverage.coverageScaleMax}+`
                           : "mm"}
                       </span>
                     </div>
-                    <div className={"gradient " + st.layer} />
-                    <div className="legend-labels">
-                      <span>{st.layer === "coverage" ? "0" : "0.00"}</span>
-                      <span>
-                        {st.layer === "coverage"
-                          ? Math.max(5, viewCount(s))
-                          : fmt(s.settings.errorThreshold * 2)}
-                      </span>
-                    </div>
+                    {st.layer === "accuracy" && (
+                      <>
+                        <div className="gradient accuracy" />
+                        <div className="legend-labels">
+                          <span>0.00</span>
+                          <span>{fmt(s.settings.errorThreshold * 2)}</span>
+                        </div>
+                      </>
+                    )}
                     {r && r.counts.length > MAX_HEATMAP_CELLS && (
                       <p className="muted tiny">{t("heatmapSampled")}</p>
+                    )}
+                    {st.layer === "coverage" && (
+                      <>
+                        <CoverageLegend settings={s.settings} />
+                        <details className="coverage-display-controls">
+                          <summary>
+                            {t("coverageThreshold")} / {t("coverageScaleMax")}
+                          </summary>
+                          <CoverageControls
+                            settings={s.settings}
+                            onChange={st.updateSettings}
+                            displayOnly
+                          />
+                        </details>
+                      </>
                     )}
                     <div className="heatmap-slider">
                       <label>
@@ -691,8 +710,8 @@ export default function App() {
                       icon: Camera,
                     },
                     {
-                      label: "coverage3",
-                      value: fmt(r?.coverage[2], 1),
+                      label: `${t("coverageDynamic")} ≥${coverage.coverageThreshold}`,
+                      value: fmt(r ? coverageAt(r, coverage.coverageThreshold) : null, 1),
                       unit: "%",
                       sub: `≥2: ${fmt(r?.coverage[1], 1)}%  ·  ≥4: ${fmt(r?.coverage[3], 1)}%`,
                       icon: Layers,
@@ -750,7 +769,7 @@ export default function App() {
         </div>
         <div>
           <Camera size={12} />
-          {cameras}
+          <CameraInventory objects={s.objects} compact />
           <span className="status-separator" />
           Marker {s.settings.markerDiameter} mm
           <span className="status-separator" />

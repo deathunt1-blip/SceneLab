@@ -5,6 +5,7 @@ import type {
   Project,
   SceneObject,
   Scheme,
+  Settings,
   SimulationResult,
   Vec3,
 } from "./models";
@@ -23,6 +24,7 @@ import { reconcileAnalysisView } from "./simulation/volume";
 import { pasteObjects } from "./project/clipboard";
 import { applyToProject, type ApplyOptions } from "./autoDeploy/apply";
 import type { Candidate, Constraints } from "./autoDeploy/types";
+import { coverageSettings } from "./simulation/coverage";
 const models = readLibrary();
 const KEY = "camera-planner.project.v1";
 let initialProject: Project;
@@ -70,7 +72,8 @@ export interface AppState {
   clipboardGroups: { id: string; name: string }[];
   pasteCount: number;
   set: (patch: Partial<AppState>) => void;
-  edit: (fn: (s: Scheme) => void) => void;
+  edit: (fn: (s: Scheme) => void, recalculate?: boolean) => void;
+  updateSettings: (patch: Partial<Settings>) => void;
   updateObjects: (ids: string[], patch: Partial<SceneObject>) => void;
   changeModels: (models: CameraModel[]) => boolean;
   undo: () => void;
@@ -149,7 +152,7 @@ export const useStore = create<AppState>((set, get) => ({
       ...(view.reset ? { toast: "pointReset" } : {}),
     });
   },
-  edit: (fn) => {
+  edit: (fn, recalculate = true) => {
     const previous = get().project,
       p = structuredClone(previous),
       s = activeScheme({ project: p });
@@ -165,7 +168,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().clip,
       oldScheme.boundary,
     );
-    s.revision++;
+    if (recalculate) s.revision++;
     p.updated_at = new Date().toISOString();
     persist(KEY, p);
     set({
@@ -177,6 +180,22 @@ export const useStore = create<AppState>((set, get) => ({
       toast: storageStatus.error || (view.reset ? "pointReset" : get().toast),
     });
   },
+  updateSettings: (patch) =>
+    get().edit(
+      (s) => {
+        s.settings = { ...s.settings, ...patch };
+        s.settings = { ...s.settings, ...coverageSettings(s.settings) };
+      },
+      Object.keys(patch).some(
+        (k) =>
+          ![
+            "coverageThreshold",
+            "coverageScaleMax",
+            "highlightCoverageThreshold",
+            "autoUpdate",
+          ].includes(k),
+      ),
+    ),
   updateObjects: (ids, patch) =>
     get().edit((s) => {
       s.objects = s.objects.map((o) =>
@@ -213,7 +232,11 @@ export const useStore = create<AppState>((set, get) => ({
       ...(view.reset ? { toast: "pointReset" } : {}),
       past: state.past.slice(0, -1),
       future: [state.project, ...state.future],
-      result: null,
+      result:
+        activeScheme({ project: p }).id === activeScheme(state).id &&
+        activeScheme({ project: p }).revision === activeScheme(state).revision
+          ? state.result
+          : null,
       selected: [],
     });
   },
@@ -235,7 +258,11 @@ export const useStore = create<AppState>((set, get) => ({
       ...(view.reset ? { toast: "pointReset" } : {}),
       past: [...state.past, state.project],
       future: state.future.slice(1),
-      result: null,
+      result:
+        activeScheme({ project: p }).id === activeScheme(state).id &&
+        activeScheme({ project: p }).revision === activeScheme(state).revision
+          ? state.result
+          : null,
       selected: [],
     });
   },

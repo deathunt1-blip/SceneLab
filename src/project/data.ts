@@ -1,3 +1,9 @@
+import {
+  rectanglePerimeterPoints,
+  gridPoints,
+  linearPoints,
+  circlePoints,
+} from "./arrayLayout";
 import type {
   CameraModel,
   ObjectKind,
@@ -9,6 +15,11 @@ import type {
 import { uid } from "../models";
 import { lookAt } from "../simulation/math";
 import { validateModel } from "../camera/repository";
+import {
+  coverageDefaults,
+  coverageSettings,
+  validCoverageSettings,
+} from "../simulation/coverage";
 export function makeObject(kind: ObjectKind, n = 1): SceneObject {
   return {
     id: uid(),
@@ -68,35 +79,18 @@ export function cameraArray(
   end = 360,
 ): SceneObject[] {
   const group = uid();
-  return Array.from({ length: count }, (_, i) => {
-    let p: Vec3;
-    if (type === "circle") {
-      const angle =
-        ((start +
-          ((end - start) * i) /
-            (Math.abs(end - start) >= 360 ? count : Math.max(1, count - 1))) *
-          Math.PI) /
-        180;
-      p = [Math.cos(angle) * radius, Math.sin(angle) * radius, height];
-    } else if (type === "linear")
-      p = [-radius + (2 * radius * i) / Math.max(1, count - 1), -radius, height];
-    else if (type === "grid") {
-      const cols = Math.ceil(Math.sqrt(count)),
-        rows = Math.ceil(count / cols);
-      p = [
-        -radius + ((i % cols) * 2 * radius) / Math.max(1, cols - 1),
-        -radius + (Math.floor(i / cols) * 2 * radius) / Math.max(1, rows - 1),
-        height,
-      ];
-    } else {
-      const d = (i / count) * 8 * radius;
-      if (d < 2 * radius) p = [-radius + d, -radius, height];
-      else if (d < 4 * radius) p = [radius, -radius + d - 2 * radius, height];
-      else if (d < 6 * radius) p = [radius - (d - 4 * radius), radius, height];
-      else p = [-radius, radius - (d - 6 * radius), height];
-    }
-    return { ...makeCamera(model, p, target, offset + i + 1), group };
-  });
+  const points =
+    type === "circle"
+      ? circlePoints(count, radius, height, start, end)
+      : type === "rectangle"
+        ? rectanglePerimeterPoints(count, 2 * radius, 2 * radius, height)
+        : type === "grid"
+          ? gridPoints(count, 2 * radius, 2 * radius, height)
+          : linearPoints(count, 2 * radius, height);
+  return points.map((p, i) => ({
+    ...makeCamera(model, p, target, offset + i + 1),
+    group,
+  }));
 }
 export function makeProject(model?: CameraModel): Project {
   const scheme: Scheme = {
@@ -105,6 +99,7 @@ export function makeProject(model?: CameraModel): Project {
     boundary: [12, 10, 5],
     revision: 0,
     settings: {
+      ...coverageDefaults,
       voxel: 0.5,
       markerDiameter: 12,
       errorThreshold: 0.5,
@@ -190,6 +185,7 @@ export function validateProject(p: Project): void {
       !vec(s.boundary) ||
       s.boundary.some((v) => v <= 0 || v > 1000) ||
       !s.settings ||
+      !validCoverageSettings(s.settings) ||
       typeof s.settings.autoUpdate !== "boolean" ||
       !Number.isFinite(s.settings.voxel) ||
       s.settings.voxel < 0.01 ||
@@ -202,6 +198,7 @@ export function validateProject(p: Project): void {
     )
       throw new Error("invalidFile");
     ids.add(s.id);
+    s.settings = { ...s.settings, ...coverageSettings(s.settings) };
     if (
       s.groups !== undefined &&
       (!Array.isArray(s.groups) ||

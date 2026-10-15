@@ -1,3 +1,4 @@
+import { coverageSettings, coverageAt, coverageIssues } from "../simulation/coverage";
 import type { Scheme, SimulationResult } from "../models";
 import { assertCurrentAnalysis, finiteOrNull } from "./validation";
 
@@ -7,12 +8,19 @@ export function buildAnalysisExport(
   diagnostics = false,
 ) {
   assertCurrentAnalysis(scheme, result);
+  const c = coverageSettings(scheme.settings);
   return {
     scheme_id: scheme.id,
     scheme_name: scheme.name,
     scheme_revision: scheme.revision,
     generated_at: result.timestamp,
     settings: {
+      coverage_basis: c.coverageBasis,
+      coverage_threshold: c.coverageThreshold,
+      coverage_scale_max: c.coverageScaleMax,
+      highlight_coverage_threshold: c.highlightCoverageThreshold,
+      tracking_range_source: c.trackingRangeSource,
+      tracking_range_override_m: c.trackingRangeOverrideM,
       boundary_m: [...result.boundary],
       voxel_m: scheme.settings.voxel,
       actual_voxel_size_m: [...result.voxelSize],
@@ -31,6 +39,13 @@ export function buildAnalysisExport(
       ge4: result.coverage[3],
       ge5: result.coverage[4],
     },
+    coverage_at_threshold: coverageAt(result, c.coverageThreshold),
+    view_count_histogram:
+      result.viewCountHistogram ??
+      Array.from(result.counts).reduce<number[]>((h, n) => {
+        h[n] = (h[n] || 0) + 1;
+        return h;
+      }, []),
     average_view_count: result.averageCount,
     accuracy_mm: {
       mean: finiteOrNull(result.meanError),
@@ -50,7 +65,7 @@ export function buildAnalysisExport(
       ? {
           diagnostics: {
             included: true as const,
-            issues: result.issues.map((i) => ({
+            issues: coverageIssues(result, c.coverageThreshold).map((i) => ({
               type: i.type,
               count: i.count,
               position_m: [...i.position],

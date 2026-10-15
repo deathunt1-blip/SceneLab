@@ -1,6 +1,7 @@
 import { uid, type Project, type Scheme } from "../models";
 import type { ApplyMode, Candidate, Constraints } from "./types";
 import { PLANNER_VERSION } from "./types";
+import { coverageSettings } from "../simulation/coverage";
 
 export interface ApplyOptions {
   mode: ApplyMode;
@@ -77,6 +78,7 @@ export function applyToProject(
   s.boundary = [...c.boundary];
   s.settings = {
     ...s.settings,
+    ...coverageSettings({ ...c, coverageThreshold: c.minViews }),
     markerDiameter: c.markerDiameter,
     errorThreshold: c.errorThreshold,
   };

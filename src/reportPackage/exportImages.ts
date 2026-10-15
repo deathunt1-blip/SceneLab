@@ -1,3 +1,4 @@
+import { coverageDisplayKey } from "../simulation/coverage";
 import type { Scheme, SimulationResult } from "../models";
 import type { Asset, ImageEntry, ReportImage } from "./types";
 import { ReportPackageError } from "./validation";
@@ -37,7 +38,9 @@ export function exportImages(
     (i) =>
       i.schemeId === scheme.id &&
       i.revision === scheme.revision &&
-      (i.layer === "none" || i.analysisTimestamp === result.timestamp),
+      (i.layer === "none" ||
+        (i.analysisTimestamp === result.timestamp &&
+          i.coverageDisplayKey === coverageDisplayKey(scheme.settings))),
   );
   const entries: ImageEntry[] = [],
     assets: Asset[] = [];

@@ -1,0 +1,23 @@
+{
+  "description": "Settings fragment for a tracking-range study; not a full project file.",
+  "settings": {
+    "voxel": 0.5,
+    "markerDiameter": 16,
+    "errorThreshold": 0.5,
+    "autoUpdate": false,
+    "coverageBasis": "trackingRange",
+    "coverageThreshold": 8,
+    "coverageScaleMax": 12,
+    "highlightCoverageThreshold": true,
+    "trackingRangeSource": "manual",
+    "trackingRangeOverrideM": 20
+  },
+  "legacy_defaults": {
+    "coverageBasis": "imaging",
+    "coverageThreshold": 3,
+    "coverageScaleMax": 8,
+    "highlightCoverageThreshold": false,
+    "trackingRangeSource": "model",
+    "trackingRangeOverrideM": null
+  }
+}

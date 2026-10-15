@@ -1,3 +1,4 @@
+import { CoverageLegend } from "./CoverageControls";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -11,7 +12,7 @@ import {
   makeSceneObject,
 } from "../renderer/scene";
 import { buildHeatmapCells } from "../renderer/heatmap";
-import { viewCount } from "../simulation/engine";
+import { coverageSettings } from "../simulation/coverage";
 import { useT } from "../i18n";
 
 export function AutoDeployPreview({
@@ -111,8 +112,10 @@ export function AutoDeployPreview({
             cell.count,
             cell.error,
             layer,
-            Math.max(5, viewCount(s)),
+            coverageSettings(s.settings).coverageScaleMax,
             constraints.errorThreshold * 2,
+            coverageSettings(s.settings).coverageThreshold,
+            coverageSettings(s.settings).highlightCoverageThreshold,
           ),
         );
       });
@@ -173,6 +176,11 @@ export function AutoDeployPreview({
         </select>
       </div>
       <div className="ad-preview-canvas" ref={host} />
+      {layer === "coverage" && (
+        <CoverageLegend
+          settings={{ ...constraints, coverageThreshold: constraints.minViews }}
+        />
+      )}
       {layer !== "none" && (
         <label className="ad-clip">
           {t("clip")} {clip.toFixed(1)} m{" "}

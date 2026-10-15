@@ -8,7 +8,7 @@ fs.mkdirSync(target, { recursive: true });
 const files = [
   [`release/build/SceneLab-${version}-Windows-x64.zip`, `SceneLab-${version}-Windows-x64.zip`],
   [`release/build/SceneLab-${version}-Setup-x64.exe`, `SceneLab-${version}-Setup-x64.exe`],
-  ["output/pdf/SceneLab_v1.4_使用说明.pdf", "SceneLab_v1.4_使用说明.pdf"],
+  ["output/pdf/SceneLab_v1.5_使用说明.pdf", "SceneLab_v1.5_使用说明.pdf"],
   ["docs/先读我.txt", "先读我.txt"],
   [`docs/v${version}-更新说明.md`, `v${version}-更新说明.md`],
 ];

@@ -10,6 +10,7 @@ export interface ReportImage {
   schemeId: string;
   clip: number;
   analysisTimestamp?: string;
+  coverageDisplayKey?: string;
 }
 export interface PackageOptions {
   cameraViews: boolean;

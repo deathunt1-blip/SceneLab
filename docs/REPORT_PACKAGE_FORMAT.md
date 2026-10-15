@@ -64,3 +64,23 @@ PNG 复用现有报告的 CameraDiagram，属于 `diagram_overview`，Marker 符
 只有 `result.schemeId == scheme.id` 且 `result.revision == scheme.revision` 时可导出。核心 PNG 必须属于该版本，热图还必须对应当前分析时间。缺失图片可在弹窗中重新生成。导出期间捕获独立方案快照，并在生成结束、下载前再次检查；场景或分析改变则终止本次导出。取消操作不会下载半成品。
 
 v1.0 / v1.1 / v1.2 项目结构、相机库与 PDF 打印入口保留。扩展的报告图片元数据只在当前运行会话使用，不改项目存储 schema。
+
+
+## v1.5 兼容扩展（format_version 仍为 1.0）
+
+`analysis.json.settings` 新增：
+
+| 字段 | 语义 |
+| --- | --- |
+| `coverage_basis` | `imaging` / `trackingRange` |
+| `coverage_threshold` | ≥K 达标所需有效视点，整数 1-400 |
+| `coverage_scale_max` | 显示色阶上限；实际值达到此数即饱和；始终 ≥K |
+| `highlight_coverage_threshold` | 是否以灰蓝色突出未达标区域 |
+| `tracking_range_source` | `model` / `manual` |
+| `tracking_range_override_m` | 统一手动距离（米），未设置为 null |
+
+顶层 `coverage_at_threshold` 为当前 ≥K 达标率（0-100），`view_count_histogram[n]` 为恰好 n 个有效覆盖视点的采样数。原 `coverage_percent.ge1` 至 `ge5` 继续保留。诊断增加 `requirement`（count < K），旧 `coverage` 类型继续表示成像有效视点不足 2，二者可以同时出现。
+
+追踪距离覆盖忽略 small / edge，按中心 FOV、工作距离、前方与遮挡统计；精度和 camera_views 成像数据仍使用原成像判据。模型距离来自每台相机快照，null 表示没有最大距离限制；手动距离仅改变覆盖试算。
+
+热图 PNG 同时校验分析时间和覆盖显示设置；改变 K、色阶、突出模式后重新生成截图，避免新指标与旧图混用。project.json 中的 scheme/settings 保留对应 camelCase 字段；示例参数片段见 examples/coverage-v1.5.json。

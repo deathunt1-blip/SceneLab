@@ -18,9 +18,10 @@ module.exports = {
   files: ["dist/**/*", "electron/**/*", "package.json"],
   win: {
     extraFiles: [
+      { from: "docs/v1.5.0-更新说明.md", to: "v1.5.0-更新说明.md" },
       { from: "docs/AUTO_DEPLOY.md", to: "AUTO_DEPLOY.md" },
       { from: "docs/REPORT_PACKAGE_FORMAT.md", to: "技术报告包格式说明.md" },
-      { from: "output/pdf/SceneLab_v1.4_使用说明.pdf", to: "使用说明.pdf" },
+      { from: "output/pdf/SceneLab_v1.5_使用说明.pdf", to: "使用说明.pdf" },
       { from: "docs/先读我.txt", to: "先读我.txt" },
       { from: "docs/v1.4-更新说明.txt", to: "v1.4-更新说明.txt" },
       { from: "docs/v1.4.1-更新说明.md", to: "v1.4.1-更新说明.md" },
@@ -70,7 +71,7 @@ module.exports = {
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: "SceneLab",
-    uninstallDisplayName: "SceneLab v1.4",
+    uninstallDisplayName: "SceneLab v1.5",
     deleteAppDataOnUninstall: false,
     runAfterFinish: false,
     installerLanguages: ["zh_CN", "en_US"],

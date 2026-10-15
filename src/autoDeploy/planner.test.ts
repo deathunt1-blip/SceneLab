@@ -20,6 +20,7 @@ import { planDeployment } from "./planner";
 import { metricsFor, rank } from "./scoring";
 import { applyToProject } from "./apply";
 import { profiles } from "./types";
+import { neighbors } from "./optimizer";
 
 const model = () => ({ ...newModel(), id: "test-model" });
 function scene(boundary: Vec3 = [5, 5, 3], voxel = 0.5): Scheme {
@@ -46,6 +47,24 @@ const setup = (s = scene()) => {
 };
 
 describe("parameterized layouts", () => {
+  it("deduplicates inactive phases for fixed arrays while preserving curved-layout search", () => {
+    const { s, m, c } = setup();
+    for (const layout of ["perimeter", "ceiling", "hybrid", "free"] as const) {
+      const p = initialParameters(c, m, layout, 16);
+      const first = generateCandidate(s, c, m, { ...p, phase: 0.1 });
+      const second = generateCandidate(s, c, m, { ...p, phase: 0.8 });
+      expect(first).toEqual(second);
+      expect(neighbors(p).every((n) => n.phase === p.phase)).toBe(true);
+    }
+    const curved = {
+      ...initialParameters(c, m, "free", 16),
+      freeShape: "ellipse" as const,
+    };
+    expect(generateCandidate(s, c, m, { ...curved, phase: 0.1 }).id).not.toBe(
+      generateCandidate(s, c, m, { ...curved, phase: 0.8 }).id,
+    );
+    expect(neighbors(curved).some((n) => n.phase !== curved.phase)).toBe(true);
+  });
   it("apportions rectangular edges by physical length and preserves exact counts", () => {
     expect(apportion(16, [20, 10, 20, 10])).toEqual([5, 3, 5, 3]);
     const { s, m, c } = setup(scene([20, 10, 5]));

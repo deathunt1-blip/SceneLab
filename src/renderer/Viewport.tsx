@@ -13,8 +13,9 @@ import {
 } from "./scene";
 import { basis, dot, rad } from "../simulation/math";
 import type { SceneObject, Vec3 } from "../models";
-import { analyzePoint, worldMarkers, viewCount } from "../simulation/engine";
+import { analyzePoint, worldMarkers } from "../simulation/engine";
 import { pointInVolume } from "../simulation/volume";
+import { coverageSettings } from "../simulation/coverage";
 import { buildHeatmapCells } from "./heatmap";
 import { currentResult } from "../simulation/currentResult";
 import { pickSceneObjects, pickCandidate, pickableMeshes } from "./picking";
@@ -402,7 +403,8 @@ export function Viewport() {
         heatmapCells.length,
       );
       const matrix = new THREE.Matrix4();
-      const maximum = Math.max(5, viewCount(scheme));
+      const coverage = coverageSettings(scheme.settings);
+      const maximum = coverage.coverageScaleMax;
       heatmapCells.forEach((cell, j) => {
         matrix.makeScale(...cell.size);
         matrix.setPosition(...cell.position);
@@ -415,6 +417,8 @@ export function Viewport() {
             state.layer,
             maximum,
             scheme.settings.errorThreshold * 2,
+            coverage.coverageThreshold,
+            coverage.highlightCoverageThreshold,
           ),
         );
       });
@@ -440,8 +444,8 @@ export function Viewport() {
         rt.content.add(
           line(
             [o.cameraPosition ?? c.position, state.point],
-            o.valid ? "#0e9d80" : "#d67862",
-            o.valid ? 0.55 : 0.16,
+            o.coverageValid ? "#0e9d80" : "#d67862",
+            o.coverageValid ? 0.55 : 0.16,
           ),
         );
       }

@@ -1,3 +1,4 @@
+import { coverageDisplayKey } from "../simulation/coverage";
 import { describe, expect, it, vi } from "vitest";
 import JSZip from "jszip";
 import { createP3Model, newModel } from "../camera/repository";
@@ -78,6 +79,7 @@ function fixture() {
     schemeId: scheme.id,
     clip: 5,
     analysisTimestamp: result.timestamp,
+    coverageDisplayKey: coverageDisplayKey(scheme.settings),
   }));
   return {
     project,
@@ -191,6 +193,7 @@ describe("report package", () => {
       f.images.slice(1),
       f.images.map((i) => ({ ...i, revision: 41 })),
       f.images.map((i) => ({ ...i, analysisTimestamp: "older" })),
+      f.images.map((i) => ({ ...i, coverageDisplayKey: "old-display" })),
       f.images.map((i) => ({ ...i, manual: true })),
     ])
       await expect(createPackage({ ...f, images })).rejects.toThrow(
@@ -199,6 +202,21 @@ describe("report package", () => {
     await expect(
       createPackage({ ...f, images: f.images.map((i) => ({ ...i, data: "data:," })) }),
     ).rejects.toThrow("packageInvalidImage");
+  });
+  it("requires fresh heatmap captures after display-only settings change", () => {
+    const f = fixture();
+    const revision = f.scheme.revision;
+    f.scheme.settings.coverageThreshold = 8;
+    f.scheme.settings.coverageScaleMax = 12;
+    expect(f.scheme.revision).toBe(revision);
+    expect(() => exportImages(f.images, f.scheme, f.result)).toThrow(
+      "packageImagesMissing",
+    );
+    f.images = f.images.map((i) => ({
+      ...i,
+      coverageDisplayKey: coverageDisplayKey(f.scheme.settings),
+    }));
+    expect(exportImages(f.images, f.scheme, f.result).entries).toHaveLength(6);
   });
   it("includes only current manual images and assigns stable manual roles", () => {
     const f = fixture();

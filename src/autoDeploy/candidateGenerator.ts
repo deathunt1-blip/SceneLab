@@ -3,6 +3,10 @@ import { beamAxis, isBeam } from "../project/structures";
 import { add, length, lookAt, rotate, sub, unrotate } from "../simulation/math";
 import { obstacles, pointInside } from "../simulation/engine";
 import type { Candidate, Constraints, Layout, MountInfo, Parameters } from "./types";
+import { rectanglePerimeterPoints, gridPoints, apportion } from "../project/arrayLayout";
+import { coverageSettings } from "../simulation/coverage";
+import { usesPhase } from "./optimizer";
+export { apportion } from "../project/arrayLayout";
 
 export const structuresIn = (s: Scheme) =>
   s.objects.filter((o) => o.visible && o.enabled && (isBeam(o) || o.kind === "surface"));
@@ -74,18 +78,6 @@ const object = (
 const spacingFor = (m: CameraModel) =>
   Math.max(0.3, (m.housing_mm?.[0] || 220) / 1000 + 0.1);
 
-/** Largest remainder apportionment keeps long sides proportional and preserves exact totals. */
-export function apportion(count: number, weights: number[]) {
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const quotas = weights.map((w) => (count * w) / sum),
-    out = quotas.map(Math.floor);
-  const order = quotas
-    .map((q, i) => ({ i, fraction: q - out[i] }))
-    .sort((a, b) => b.fraction - a.fraction || a.i - b.i);
-  const remaining = count - out.reduce((a, b) => a + b, 0);
-  for (let j = 0; j < remaining; j++) out[order[j].i]++;
-  return out;
-}
 type Slot = { position: Vec3; reference: string; side: string; layer: number };
 function existingSlots(s: Scheme, m: CameraModel, aim: Vec3): Slot[] {
   const gap = spacingFor(m),
@@ -134,6 +126,8 @@ export function generateCandidate(
   m: CameraModel,
   params: Parameters,
 ): Candidate {
+  // Fixed arrays have no phase; keep equivalent layouts out of the simulation pool.
+  params = { ...params, phase: usesPhase(params) ? params.phase : 0 };
   const id = `auto-${hash(JSON.stringify(params))}`;
   const candidate: Candidate = {
     id,
@@ -279,42 +273,40 @@ export function generateCandidate(
           );
         }
       } else {
-        const counts = apportion(n, [lx, ly, lx, ly]);
-        for (let side = 0; side < 4; side++) {
-          const amount = counts[side],
-            longX = side % 2 === 0,
-            extent = longX ? lx : ly;
-          if (!amount) continue;
-          if (extent / amount < gap) return fail("adMountCapacity");
-          const reference =
-            params.layout === "free"
-              ? undefined
-              : beam(
-                  longX
-                    ? [0, (side === 0 ? -1 : 1) * (ly / 2 - 0.08), z + 0.18]
-                    : [(side === 1 ? 1 : -1) * (lx / 2 - 0.08), 0, z + 0.18],
-                  [extent, 0.08, 0.08],
-                  longX ? [0, 0, 0] : [90, 0, 0],
-                );
-          for (let i = 0; i < amount; i++) {
-            const along =
-              ((i + 0.5 + Math.sin(layer + side) * params.phase * 0.3) / amount - 0.5) *
-              (extent - 0.3);
-            const p: Vec3 = longX
-              ? [along, (side === 0 ? -1 : 1) * (ly / 2 - 0.08), z]
-              : [(side === 1 ? 1 : -1) * (lx / 2 - 0.08), along, z];
-            addCamera(
-              p,
-              {
-                type: params.layout === "free" ? "tripod" : "truss",
-                reference,
-                layer,
-                side: ["south", "east", "north", "west"][side],
-              },
-              candidate.cameras.length,
-            );
-          }
-        }
+        const points = rectanglePerimeterPoints(n, lx - 0.16, ly - 0.16, z);
+        const references = [0, 1, 2, 3].map((side) =>
+          params.layout === "free"
+            ? undefined
+            : beam(
+                side % 2 === 0
+                  ? [0, (side === 0 ? -1 : 1) * (ly / 2 - 0.08), z + 0.18]
+                  : [(side === 1 ? 1 : -1) * (lx / 2 - 0.08), 0, z + 0.18],
+                [side % 2 === 0 ? lx : ly, 0.08, 0.08],
+                side % 2 === 0 ? [0, 0, 0] : [90, 0, 0],
+              ),
+        );
+        points.forEach((p, index) => {
+          const side =
+            n >= 4 && index < 4
+              ? index
+              : Math.abs(p[1] + ly / 2 - 0.08) < 1e-6
+                ? 0
+                : Math.abs(p[0] - lx / 2 + 0.08) < 1e-6
+                  ? 1
+                  : Math.abs(p[1] - ly / 2 + 0.08) < 1e-6
+                    ? 2
+                    : 3;
+          addCamera(
+            p,
+            {
+              type: params.layout === "free" ? "tripod" : "truss",
+              reference: references[side],
+              layer,
+              side: ["south", "east", "north", "west"][side],
+            },
+            candidate.cameras.length,
+          );
+        });
       }
     }
     if (ceilingCount) {
@@ -327,31 +319,21 @@ export function generateCandidate(
             : top -
               lz * Math.min(0.22, params.spread) * (1 - level / (ceilingLayers - 1));
         const amountAtHeight = atHeight[level];
-        const cols = Math.max(1, Math.ceil(Math.sqrt((amountAtHeight * lx) / ly))),
-          rows = Math.ceil(amountAtHeight / cols);
-        if (lx / cols < gap || ly / rows < gap) return fail("adMountCapacity");
-        const rowCounts = apportion(amountAtHeight, Array(rows).fill(1));
-        for (let row = 0; row < rows; row++) {
-          const y = ((row + 0.5) / rows - 0.5) * (ly - 0.25),
-            amount = rowCounts[row];
-          const reference = beam([0, y, z + 0.18], [lx, 0.08, 0.08]);
-          for (let col = 0; col < amount; col++) {
-            const x =
-              ((col + 0.5 + (row % 2 ? params.phase * 0.5 : -params.phase * 0.5)) /
-                amount -
-                0.5) *
-              (lx - 0.4);
-            addCamera(
-              [x, y, z],
-              {
-                type: "ceiling",
-                reference,
-                side: "ceiling",
-                layer: params.layout === "hybrid" ? params.layers - 1 : level,
-              },
-              candidate.cameras.length,
-            );
-          }
+        const grid = gridPoints(amountAtHeight, lx - 0.4, ly - 0.25, z);
+        const references = new Map<number, string>();
+        for (const point of grid) {
+          if (!references.has(point[1]))
+            references.set(point[1], beam([0, point[1], z + 0.18], [lx, 0.08, 0.08]));
+          addCamera(
+            point,
+            {
+              type: "ceiling",
+              reference: references.get(point[1]),
+              side: "ceiling",
+              layer: params.layout === "hybrid" ? params.layers - 1 : level,
+            },
+            candidate.cameras.length,
+          );
         }
       }
     }
@@ -385,6 +367,7 @@ export function candidateScheme(
     boundary: [...c.boundary],
     settings: {
       ...s.settings,
+      ...coverageSettings({ ...c, coverageThreshold: c.minViews }),
       voxel,
       markerDiameter: c.markerDiameter,
       errorThreshold: c.errorThreshold,
