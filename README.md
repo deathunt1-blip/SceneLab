@@ -1,8 +1,8 @@
-# SceneLab v1.5.0
+# SceneLab v1.5.1
 
 光学动捕相机部署与理论精度仿真工作台。**v1.5 新增相机清单、尺寸化阵列二维预览，以及可独立设置的覆盖判定方式、视点阈值和热图色阶。** 自动部署与报告同步使用覆盖设置。发布 Windows x64；Mac 暂保留 v1.3.1。Kimi 助手可选，离线规划无需 API。
 
-[下载 v1.5.0](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.5.0) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
+[下载 v1.5.1](https://github.com/deathunt1-blip/SceneLab/releases/tag/v1.5.1) · [自动部署使用说明](docs/AUTO_DEPLOY.md) · [更新记录](CHANGELOG.md) · [版本管理与发布流程](docs/VERSIONING.md)
 
 ## 分发版
 
@@ -18,7 +18,7 @@ Mac 版使用 ad-hoc 签名，未使用 Apple 开发者证书，未公证。首�
 
 ### Windows
 
-发布文件位于 `release/SceneLab-v1.5.0/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
+发布文件位于 `release/SceneLab-v1.5.1/`。同事可运行安装程序，或完整解压免安装 ZIP 后双击 `SceneLab.exe`；不需要 Node.js。程序同目录有「使用说明.pdf」，应用内按 F1 打开。
 
 安装版与免安装版都使用当前用户的 `%APPDATA%\\Camera Planner`，以兼容已有项目。免安装是无需安装，不表示数据随程序目录移动。分享项目和自定义相机库时，分别导出项目文件与参数库 JSON。发布包不包含本机用户数据。
 
@@ -42,6 +42,10 @@ npm run dev
 ```
 
 浏览器访问 `http://127.0.0.1:5173`。桌面版使用固定本地地址 `http://127.0.0.1:5178`，两者的存储相互独立；通过导出/打开项目和导入/导出参数库交换数据。程序与字体不依赖在线服务。
+
+## v1.5.1 覆盖配色
+
+覆盖数量视图左下方可选择「经典多色（蓝 → 红）」或「单色蓝（浅蓝 → 深蓝）」。原配色保留；单色蓝中视点越多颜色越深。选择随方案保存并同步到自动部署预览、技术报告与报告包，切换无需重跑分析。
 
 ## v1.5 覆盖与部署
 

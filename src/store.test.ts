@@ -58,6 +58,34 @@ describe("scene clipboard and history", () => {
     state().updateSettings({ trackingRangeSource: "manual", trackingRangeOverrideM: 20 });
     expect(state().project.schemes[0].revision).toBe(s.revision + 2);
   });
+  it("persists palette switches and keeps the current analysis through undo and redo", () => {
+    const p = makeProject(newModel());
+    p.schemes[0].boundary = [2, 2, 2];
+    p.schemes[0].settings.voxel = 1;
+    state().loadProject(p);
+    const scheme = state().project.schemes[0],
+      result = simulate(scheme);
+    const counts = Array.from(result.counts),
+      errors = Array.from(result.errors);
+    state().set({ result });
+    state().updateSettings({ coveragePalette: "blue" });
+    expect(state().project.schemes[0].revision).toBe(scheme.revision);
+    expect(currentResult(state().project.schemes[0], state().result)).toBe(result);
+    expect(Array.from(result.counts)).toEqual(counts);
+    expect(Array.from(result.errors)).toEqual(errors);
+    expect(
+      JSON.parse(entries.get("camera-planner.project.v1")!).schemes[0].settings
+        .coveragePalette,
+    ).toBe("blue");
+    state().undo();
+    expect(state().project.schemes[0].settings.coveragePalette).toBe("spectrum");
+    expect(state().result).toBe(result);
+    state().redo();
+    expect(state().project.schemes[0].settings.coveragePalette).toBe("blue");
+    expect(state().result).toBe(result);
+    state().loadProject(state().project);
+    expect(state().project.schemes[0].settings.coveragePalette).toBe("blue");
+  });
   it("migrates legacy project snapshots across schemes once and invalidates their analysis revisions", () => {
     const model = { ...newModel(), minimum_marker_pixels: 4 };
     delete model.marker_threshold_version;

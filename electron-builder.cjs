@@ -18,6 +18,7 @@ module.exports = {
   files: ["dist/**/*", "electron/**/*", "package.json"],
   win: {
     extraFiles: [
+      { from: "docs/v1.5.1-更新说明.md", to: "v1.5.1-更新说明.md" },
       { from: "docs/v1.5.0-更新说明.md", to: "v1.5.0-更新说明.md" },
       { from: "docs/AUTO_DEPLOY.md", to: "AUTO_DEPLOY.md" },
       { from: "docs/REPORT_PACKAGE_FORMAT.md", to: "技术报告包格式说明.md" },

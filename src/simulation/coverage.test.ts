@@ -155,6 +155,7 @@ describe("independent coverage and imaging criteria", () => {
         trackingRangeOverrideM: 20,
         coverageScaleMax: 12,
         highlightCoverageThreshold: true,
+        coveragePalette: "blue" as const,
       };
     validateConstraints(c, [m]);
     expect(() => validateConstraints({ ...c, minViews: 2.5 }, [m])).toThrow();
@@ -180,6 +181,7 @@ describe("independent coverage and imaging criteria", () => {
       coverage_scale_max: 12,
       tracking_range_override_m: 20,
       highlight_coverage_threshold: true,
+      coverage_palette: "blue",
     });
     expect(data.coverage_at_threshold).toBe(metrics.targetCoverage);
     expect(data.coverage_percent.ge3).toBe(r.coverage[2]);

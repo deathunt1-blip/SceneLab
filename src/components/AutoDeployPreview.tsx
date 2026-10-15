@@ -116,6 +116,7 @@ export function AutoDeployPreview({
             constraints.errorThreshold * 2,
             coverageSettings(s.settings).coverageThreshold,
             coverageSettings(s.settings).highlightCoverageThreshold,
+            coverageSettings(s.settings).coveragePalette,
           ),
         );
       });

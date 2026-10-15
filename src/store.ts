@@ -191,6 +191,7 @@ export const useStore = create<AppState>((set, get) => ({
           ![
             "coverageThreshold",
             "coverageScaleMax",
+            "coveragePalette",
             "highlightCoverageThreshold",
             "autoUpdate",
           ].includes(k),

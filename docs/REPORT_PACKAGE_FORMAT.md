@@ -84,3 +84,8 @@ v1.0 / v1.1 / v1.2 项目结构、相机库与 PDF 打印入口保留。扩展�
 追踪距离覆盖忽略 small / edge，按中心 FOV、工作距离、前方与遮挡统计；精度和 camera_views 成像数据仍使用原成像判据。模型距离来自每台相机快照，null 表示没有最大距离限制；手动距离仅改变覆盖试算。
 
 热图 PNG 同时校验分析时间和覆盖显示设置；改变 K、色阶、突出模式后重新生成截图，避免新指标与旧图混用。project.json 中的 scheme/settings 保留对应 camelCase 字段；示例参数片段见 examples/coverage-v1.5.json。
+
+
+## v1.5.1 覆盖配色
+
+`analysis.json.settings.coverage_palette` 新增可选枚举：`spectrum`（经典蓝到红，旧项目默认）或 `blue`（浅蓝到深蓝，越深视点越多）。project.json 中对应 `coveragePalette`。只影响显示；不改变覆盖、精度、阈值或统计值。改变配色后重新生成报告 PNG，截图与图例使用同一配色。格式版本继续为 1.0。
