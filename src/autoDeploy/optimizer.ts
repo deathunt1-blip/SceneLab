@@ -1,5 +1,8 @@
 import type { Parameters } from "./types";
 
+export const usesPhase = (p: Parameters) =>
+  p.layout === "existing" || (p.layout === "free" && p.freeShape !== "rectangle");
+
 export function neighbors(p: Parameters): Parameters[] {
   return [
     { ...p, aim: Math.max(0.1, p.aim - 0.18) },
@@ -8,7 +11,7 @@ export function neighbors(p: Parameters): Parameters[] {
     { ...p, height: Math.max(0.45, p.height - 0.16) },
     { ...p, cross: 0 },
     { ...p, cross: 0.5 },
-    { ...p, phase: (p.phase + 0.45) % 1 },
+    ...(usesPhase(p) ? [{ ...p, phase: (p.phase + 0.45) % 1 }] : []),
     ...(p.layers > 1
       ? [
           { ...p, spread: 0.3 },

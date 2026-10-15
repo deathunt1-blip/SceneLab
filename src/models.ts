@@ -74,7 +74,9 @@ export interface SceneObject {
   };
   markers?: { position: Vec3; diameter: number }[];
 }
-export interface Settings {
+export interface Settings extends Partial<
+  import("./simulation/coverage").CoverageSettings
+> {
   voxel: number;
   markerDiameter: number;
   errorThreshold: number;
@@ -103,6 +105,9 @@ export interface Observation {
   eye?: CameraEye;
   cameraPosition?: Vec3;
   valid: boolean;
+  imagingValid: boolean;
+  coverageValid: boolean;
+  coverageReasons: Failure[];
   reasons: Failure[];
   distance: number;
   u: number;
@@ -139,6 +144,7 @@ export interface SimulationResult {
   validVoxels: number;
   excludedVoxels: number;
   coverage: number[];
+  viewCountHistogram?: number[];
   averageCount: number;
   meanError: number | null;
   p90: number | null;

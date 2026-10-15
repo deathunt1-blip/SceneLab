@@ -1,15 +1,17 @@
 import type { CameraModel, SceneObject, Scheme, SimulationResult, Vec3 } from "../models";
 
-export const PLANNER_VERSION = "1.4.2";
+export const PLANNER_VERSION = "1.5.0";
 export const profiles = ["balanced", "coverage", "accuracy", "minimum"] as const;
 export type Profile = (typeof profiles)[number];
 export type Layout = "perimeter" | "ceiling" | "hybrid" | "free" | "existing";
-export interface Constraints {
+export interface Constraints extends Partial<
+  import("../simulation/coverage").CoverageSettings
+> {
   boundary: Vec3;
   markerDiameter: number;
   errorThreshold: number;
   accuracyTarget: number | null;
-  minViews: 2 | 3 | 4;
+  minViews: number;
   coverageTarget: number;
   modelIds: string[]; // Empty = search the current library, including edited profiles.
   countMode: "auto" | "exact" | "range";

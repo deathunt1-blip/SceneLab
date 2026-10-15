@@ -1,3 +1,5 @@
+import { CameraInventory } from "./CameraInventory";
+import { CoverageControls } from "./CoverageControls";
 import { Box, Camera, Copy, Crosshair, Layers, Link, Scan, Trash2 } from "lucide-react";
 import { activeScheme, useStore } from "../store";
 import { useT } from "../i18n";
@@ -158,6 +160,7 @@ export function Inspector() {
               }
             />
           </Field>
+          <CoverageControls settings={s.settings} onChange={st.updateSettings} />
           <Toggle
             label={t("autoUpdate")}
             checked={s.settings.autoUpdate}
@@ -192,6 +195,7 @@ export function Inspector() {
         </span>
       </div>
       <div className="inspector-content">
+        <CameraInventory objects={selected} />
         <Field label={t("name")}>
           <input
             value={o.name}

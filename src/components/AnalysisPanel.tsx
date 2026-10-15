@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { CoverageControls } from "./CoverageControls";
+import { coverageSettings, coverageIssues } from "../simulation/coverage";
+import { useState, useMemo } from "react";
 import { AlertTriangle, ChevronDown, Crosshair, Focus } from "lucide-react";
 import { activeScheme, useStore } from "../store";
 import { useT } from "../i18n";
@@ -25,6 +27,12 @@ export function AnalysisPanel() {
         <span className="badge">XYZ</span>
       </div>
       <div className="inspector-content">
+        <details className="coverage-analysis-controls">
+          <summary>
+            {t("coverageBasis")} / {t("coverageThreshold")}
+          </summary>
+          <CoverageControls settings={s.settings} onChange={st.updateSettings} />
+        </details>
         <p className="small muted">{t("pointHint")}</p>
         {s.objects.some((o) => o.camera_model_snapshot?.stereo) && (
           <p className="tiny muted">{t("stereoCountNote")}</p>
@@ -77,7 +85,11 @@ export function AnalysisPanel() {
         </div>
         {!data.accuracy && (
           <p className="notice small">
-            {t(data.count >= 2 ? "geometry" : "minCameraNote")}
+            {t(
+              data.observations.filter((o) => o.imagingValid).length >= 2
+                ? "geometry"
+                : "minCameraNote",
+            )}
           </p>
         )}
         <h4 className="section-title observations-title">
@@ -89,7 +101,7 @@ export function AnalysisPanel() {
             const observationId = `${c.id}:${obs.eye ?? "mono"}`;
             return (
               <div
-                className={"observation " + (obs.valid ? "valid" : "invalid")}
+                className={"observation " + (obs.coverageValid ? "valid" : "invalid")}
                 key={observationId}
               >
                 <button
@@ -104,7 +116,9 @@ export function AnalysisPanel() {
                     {c.name}
                     {obs.eye ? ` · ${t(obs.eye + "Eye")}` : ""}
                   </strong>
-                  <span>{obs.valid ? t("valid") : t(obs.reasons[0])}</span>
+                  <span>
+                    {obs.coverageValid ? t("valid") : t(obs.coverageReasons[0])}
+                  </span>
                   <ChevronDown size={13} />
                 </button>
                 {expanded === observationId && (
@@ -116,7 +130,33 @@ export function AnalysisPanel() {
                         ))}
                       </div>
                     )}
+                    {obs.coverageValid && !obs.imagingValid && (
+                      <p className="notice small">
+                        {t(
+                          obs.reasons.includes("small")
+                            ? "trackingOnlySizeHint"
+                            : "trackingOnlyHint",
+                        )}
+                      </p>
+                    )}
                     <div className="spec-grid">
+                      <span>{t("coverageBasis")}</span>
+                      <b>
+                        {t(
+                          coverageSettings(s.settings).coverageBasis === "imaging"
+                            ? "basisImaging"
+                            : "basisTracking",
+                        )}
+                      </b>
+                      <span>{t("coverageDynamic")}</span>
+                      <b>{t(obs.coverageValid ? "valid" : "invalid")}</b>
+                      <span>{t("imagingValidity")}</span>
+                      <b>{t(obs.imagingValid ? "valid" : "invalid")}</b>
+                      <span>{t("minimumImagingThreshold")}</span>
+                      <b>
+                        {c.camera_model_snapshot?.minimum_marker_pixels} ×{" "}
+                        {c.camera_model_snapshot?.minimum_marker_pixels} px
+                      </b>
                       <span>{t("distance")}</span>
                       <b>{fmt(obs.distance)} m</b>
                       <span>{t("pixelSize")}</span>
@@ -160,6 +200,11 @@ export function Issues() {
     t = useT(),
     s = activeScheme(st),
     result = st.result;
+  const threshold = coverageSettings(s.settings).coverageThreshold;
+  const issues = useMemo(
+    () => (result ? coverageIssues(result, threshold) : []),
+    [result, threshold],
+  );
   if (!result || result.schemeId !== s.id || result.revision !== s.revision) return null;
   return (
     <div className="issues-section">
@@ -168,9 +213,9 @@ export function Issues() {
           <AlertTriangle size={14} />
           {t("issues")}
         </span>
-        <span>{result.issues.length}</span>
+        <span>{issues.length}</span>
       </div>
-      {result.issues.map((issue) => (
+      {issues.map((issue) => (
         <button
           key={issue.type}
           className="issue-row"
@@ -185,11 +230,20 @@ export function Issues() {
           }
         >
           <span className={"issue-indicator " + issue.type} />
-          <span>{t("issue_" + issue.type)}</span>
+          <span>
+            {t("issue_" + issue.type)}
+            {issue.type === "requirement" && (
+              <small>
+                {" "}
+                ≥{threshold} · {t("affectedVolume")}{" "}
+                {fmt((issue.count / Math.max(1, result.validVoxels)) * 100, 1)}%
+              </small>
+            )}
+          </span>
           <b>{issue.count.toLocaleString()}</b>
         </button>
       ))}
-      {!result.issues.length && <p className="muted small">{t("noIssues")}</p>}
+      {!issues.length && <p className="muted small">{t("noIssues")}</p>}
       <p className="tiny muted">{t("issueHint")}</p>
     </div>
   );

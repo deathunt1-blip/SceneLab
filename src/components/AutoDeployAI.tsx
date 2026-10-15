@@ -81,6 +81,12 @@ export function AutoDeployAI({
       })),
     ]) || [];
   const draftLabels: Record<keyof Constraints, string> = {
+    coverageBasis: "coverageBasis",
+    coverageThreshold: "coverageThreshold",
+    coverageScaleMax: "coverageScaleMax",
+    highlightCoverageThreshold: "highlightCoverage",
+    trackingRangeSource: "trackingRangeSource",
+    trackingRangeOverrideM: "trackingDistance",
     boundary: "adBoundary",
     markerDiameter: "adMarker",
     errorThreshold: "adThreshold",

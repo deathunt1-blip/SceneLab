@@ -1,3 +1,5 @@
+import { coverageSettings } from "../simulation/coverage";
+import { CoverageControls } from "./CoverageControls";
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Play, Sparkles, X } from "lucide-react";
 import { activeScheme, useStore } from "../store";
@@ -59,7 +61,25 @@ export function AutoDeployDialog() {
     };
   }, []);
   const pendingModels = specific && (editingModels || !c.modelIds.length);
-  const dirty = output && JSON.stringify(c) !== JSON.stringify(output.constraints);
+  const calculationKey = (value: Constraints) =>
+    JSON.stringify({
+      ...value,
+      coverageScaleMax: undefined,
+      highlightCoverageThreshold: undefined,
+      coverageThreshold: undefined,
+    });
+  const dirty = output && calculationKey(c) !== calculationKey(output.constraints);
+  const previewConstraints = output
+    ? {
+        ...output.constraints,
+        ...coverageSettings({
+          ...output.constraints,
+          coverageThreshold: output.constraints.minViews,
+          coverageScaleMax: c.coverageScaleMax,
+          highlightCoverageThreshold: c.highlightCoverageThreshold,
+        }),
+      }
+    : c;
   const chosen = output?.recommendations[selected];
   const generate = () => {
     if (pendingModels) {
@@ -200,18 +220,14 @@ export function AutoDeployDialog() {
               </div>
               <div className="form-grid">
                 <Field label={t("adMinViews")}>
-                  <select
+                  <Num
                     value={c.minViews}
-                    onChange={(e) =>
-                      patch({ minViews: Number(e.target.value) as 2 | 3 | 4 })
-                    }
-                  >
-                    {[2, 3, 4].map((n) => (
-                      <option key={n} value={n}>
-                        ≥ {n}
-                      </option>
-                    ))}
-                  </select>
+                    min={1}
+                    max={400}
+                    step={1}
+                    aria-label={t("adMinViews")}
+                    onChange={(n) => patch({ minViews: Math.round(n) })}
+                  />
                 </Field>
                 <Field label={t("adCoverageTarget")}>
                   <Num
@@ -224,6 +240,11 @@ export function AutoDeployDialog() {
                   />
                 </Field>
               </div>
+              <CoverageControls
+                settings={{ ...c, coverageThreshold: c.minViews }}
+                hideThreshold
+                onChange={(v) => patch(v)}
+              />
               <label className="ad-check">
                 <input
                   type="checkbox"
@@ -571,7 +592,7 @@ export function AutoDeployDialog() {
                     </div>
                     <AutoDeployPreview
                       source={source}
-                      constraints={output.constraints}
+                      constraints={previewConstraints}
                       plan={chosen}
                     />
                     <div className="ad-candidate-summary">
@@ -579,11 +600,22 @@ export function AutoDeployDialog() {
                       <span>
                         {chosen.candidate.params.layers} {t("adLayerLabel")}
                       </span>
+                      <span>
+                        {t(
+                          coverageSettings(output.constraints).coverageBasis === "imaging"
+                            ? "basisImaging"
+                            : "basisTracking",
+                        )}
+                      </span>
                       <span>Marker {output.constraints.markerDiameter} mm</span>
                       <span>RMS ≤ {output.constraints.errorThreshold} mm</span>
                     </div>
                     <div className="ad-metrics">
                       {[
+                        [
+                          `${t("coverageDynamic")} ≥${output.constraints.minViews}`,
+                          fmt(chosen.metrics.targetCoverage, 1) + "%",
+                        ],
                         ["≥ 2", fmt(chosen.metrics.coverage[1], 1) + "%"],
                         ["≥ 3", fmt(chosen.metrics.coverage[2], 1) + "%"],
                         ["≥ 4", fmt(chosen.metrics.coverage[3], 1) + "%"],
@@ -750,7 +782,7 @@ export function AutoDeployDialog() {
                           try {
                             st.applyDeployment(
                               source,
-                              output.constraints,
+                              previewConstraints,
                               chosen.candidate,
                               { mode, structures: withStructures, name },
                             );

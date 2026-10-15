@@ -1,4 +1,5 @@
 import type { SimulationResult } from "../models";
+import { coverageAt } from "../simulation/coverage";
 import type { Constraints, Evaluation, Metrics, Profile } from "./types";
 
 export function metricsFor(r: SimulationResult, c: Constraints): Metrics {
@@ -31,7 +32,7 @@ export function metricsFor(r: SimulationResult, c: Constraints): Metrics {
     }
   }
   const accuracyPass = r.validVoxels ? (pass / r.validVoxels) * 100 : 0;
-  const targetCoverage = r.coverage[c.minViews - 1];
+  const targetCoverage = coverageAt(r, c.minViews);
   return {
     coverage: r.coverage,
     targetCoverage,
@@ -102,8 +103,10 @@ export function comparePlans(
 }
 export function rank(plans: Evaluation[], c: Constraints, profile: Profile) {
   // A failed attempt cannot establish a minimum required camera count.
-  return plans.filter((p) => profile !== "minimum" || p.metrics.meetsTarget).sort(
-    (a, b) =>
-      comparePlans(b, a, c, profile) || a.candidate.id.localeCompare(b.candidate.id),
-  );
+  return plans
+    .filter((p) => profile !== "minimum" || p.metrics.meetsTarget)
+    .sort(
+      (a, b) =>
+        comparePlans(b, a, c, profile) || a.candidate.id.localeCompare(b.candidate.id),
+    );
 }

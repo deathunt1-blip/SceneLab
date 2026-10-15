@@ -4,7 +4,12 @@ import { activeScheme, useStore } from "../store";
 import { translate, useT } from "../i18n";
 import { fmt } from "./Common";
 import type { CameraEye, Language } from "../models";
-import { viewCount } from "../simulation/engine";
+import {
+  coverageSettings,
+  coverageAt,
+  coverageDisplayKey,
+  coverageIssues,
+} from "../simulation/coverage";
 import { ReportCameraImage } from "./CameraImage";
 import type { ReportImage } from "../reportPackage/types";
 import { ReportPackageButton } from "../reportPackage/ReportPackageButton";
@@ -31,6 +36,15 @@ export function Report({
       "deployment",
     ]);
   const t = (k: string) => translate(lang, k);
+  const coverage = coverageSettings(s.settings);
+  const matchingImages = images.filter(
+    (i) =>
+      i.schemeId === s.id &&
+      i.revision === s.revision &&
+      (i.layer === "none" ||
+        (i.analysisTimestamp === r?.timestamp &&
+          i.coverageDisplayKey === coverageDisplayKey(s.settings))),
+  );
   const current = !!r && r.schemeId === s.id && r.revision === s.revision;
   const cameras = s.objects.filter((o) => o.kind === "camera"),
     models = [
@@ -127,7 +141,10 @@ export function Report({
             <div className="report-kpis">
               {[
                 [t("cameraCount"), String(cameras.filter((c) => c.enabled).length)],
-                [t("coverage3"), fmt(r!.coverage[2], 1) + "%"],
+                [
+                  `${t("coverageDynamic")} ≥${coverage.coverageThreshold}`,
+                  fmt(coverageAt(r!, coverage.coverageThreshold), 1) + "%",
+                ],
                 [t("meanError"), fmt(r!.meanError) + " mm"],
                 [t("p95"), fmt(r!.p95) + " mm"],
               ].map(([k, v]) => (
@@ -142,6 +159,49 @@ export function Report({
               <div className="report-specs">
                 <span>{t("boundary")}</span>
                 <b>{s.boundary.join(" × ")} m</b>
+                <span>{t("coverageBasis")}</span>
+                <b>
+                  {t(
+                    coverage.coverageBasis === "imaging"
+                      ? "basisImaging"
+                      : "basisTracking",
+                  )}
+                </b>
+                <span>{t("coverageThreshold")}</span>
+                <b>≥{coverage.coverageThreshold}</b>
+                <span>{t("coverageScaleMax")}</span>
+                <b>0 → {coverage.coverageScaleMax}+</b>
+                <span>{t("highlightCoverage")}</span>
+                <b>
+                  {t(
+                    coverage.highlightCoverageThreshold
+                      ? "coverageEnabled"
+                      : "coverageDisabled",
+                  )}
+                </b>
+                {coverage.coverageBasis === "trackingRange" && (
+                  <>
+                    <span>{t("trackingRangeSource")}</span>
+                    <b>
+                      {t(
+                        coverage.trackingRangeSource === "model"
+                          ? "rangeModel"
+                          : "rangeManual",
+                      )}
+                    </b>
+                    <span>{t("trackingDistance")}</span>
+                    <b>
+                      {coverage.trackingRangeSource === "manual"
+                        ? `${coverage.trackingRangeOverrideM} m`
+                        : models
+                            .map(
+                              (m) =>
+                                `${m.display_name}: ${m.max_working_distance_m === null ? t("unlimitedRange") : m.max_working_distance_m + " m"}`,
+                            )
+                            .join(" · ")}
+                    </b>
+                  </>
+                )}
                 <span>{t("markerDiameter")}</span>
                 <b>{s.settings.markerDiameter} mm</b>
                 <span>{t("voxel")}</span>
@@ -169,6 +229,12 @@ export function Report({
               )}
               <div className="report-charts">
                 <div>
+                  <p>
+                    <b>
+                      {t("coverageDynamic")} ≥{coverage.coverageThreshold}:{" "}
+                      {fmt(coverageAt(r!, coverage.coverageThreshold), 1)}%
+                    </b>
+                  </p>
                   {r!.coverage.map((v, i) => (
                     <div className="coverage-bar" key={i}>
                       <span>
@@ -201,35 +267,36 @@ export function Report({
             {sections.includes("views") && (
               <section>
                 <h3>03 / {t("reportViews")}</h3>
-                {images
-                  .filter((i) => i.schemeId === s.id && i.revision === s.revision)
-                  .map((img, i) => (
-                    <figure key={i}>
-                      <img src={img.data} alt={`${t(img.view)} · ${t(img.layer)}`} />
-                      <figcaption>
-                        {String(i + 1).padStart(2, "0")} · {t(img.view)} /{" "}
-                        {t(img.layer === "none" ? "normal" : img.layer)} · Z ≤{" "}
-                        {img.clip.toFixed(1)} m
-                      </figcaption>
-                      {img.layer !== "none" && (
-                        <div className="report-legend">
-                          <span>
-                            {t(
-                              img.layer === "coverage"
-                                ? "legendCoverage"
-                                : "legendAccuracy",
-                            )}
-                          </span>
-                          <i className={"gradient " + img.layer} />
-                          <span>
-                            {img.layer === "coverage"
-                              ? `0 → ${Math.max(5, viewCount(s))}`
-                              : `0 → ${s.settings.errorThreshold * 2} mm`}
-                          </span>
-                        </div>
-                      )}
-                    </figure>
-                  ))}
+                {matchingImages.length < 6 && (
+                  <p className="notice">{t("packageImagesMissing")}</p>
+                )}
+                {matchingImages.map((img, i) => (
+                  <figure key={i}>
+                    <img src={img.data} alt={`${t(img.view)} · ${t(img.layer)}`} />
+                    <figcaption>
+                      {String(i + 1).padStart(2, "0")} · {t(img.view)} /{" "}
+                      {t(img.layer === "none" ? "normal" : img.layer)} · Z ≤{" "}
+                      {img.clip.toFixed(1)} m
+                    </figcaption>
+                    {img.layer !== "none" && (
+                      <div className="report-legend">
+                        <span>
+                          {t(
+                            img.layer === "coverage"
+                              ? "legendCoverage"
+                              : "legendAccuracy",
+                          )}
+                        </span>
+                        <i className={"gradient " + img.layer} />
+                        <span>
+                          {img.layer === "coverage"
+                            ? `0 → ${coverage.coverageScaleMax}+ · ${t("coverageTargetLine")} ≥${coverage.coverageThreshold}`
+                            : `0 → ${s.settings.errorThreshold * 2} mm`}
+                        </span>
+                      </div>
+                    )}
+                  </figure>
+                ))}
               </section>
             )}
             <section>
@@ -336,9 +403,13 @@ export function Report({
                     </tr>
                   </thead>
                   <tbody>
-                    {r!.issues.map((i) => (
+                    {coverageIssues(r!, coverage.coverageThreshold).map((i) => (
                       <tr key={i.type}>
-                        <td>{t("issue_" + i.type)}</td>
+                        <td>
+                          {t("issue_" + i.type)}
+                          {i.type === "requirement" &&
+                            ` ≥${coverage.coverageThreshold} · ${fmt((i.count / Math.max(1, r!.validVoxels)) * 100, 1)}%`}
+                        </td>
                         <td>{i.count.toLocaleString()}</td>
                         <td>{i.position.map((v) => fmt(v, 2)).join(", ")}</td>
                       </tr>
@@ -352,6 +423,9 @@ export function Report({
               <section>
                 <h3>07 / {t("method")}</h3>
                 <p>{t("methodText")}</p>
+                {coverage.coverageBasis === "trackingRange" && (
+                  <p>{t("trackingImagingHint")}</p>
+                )}
                 <div className="formula">
                   Cₖ = |&#123;P ∈ Vvalid : N(P) ≥ k&#125;| / |Vvalid| × 100%
                   <br />
@@ -389,7 +463,7 @@ export function Report({
             )}
             <div className="report-disclaimer">{t("reportDisclaimer")}</div>
             <footer>
-              SCENELAB v1.4.2{" "}
+              SCENELAB v1.5.0{" "}
               <span>
                 {st.project.name} / {t("scheme")} {s.name}
               </span>

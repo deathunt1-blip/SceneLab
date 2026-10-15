@@ -31,6 +31,33 @@ beforeEach(() => {
 });
 
 describe("scene clipboard and history", () => {
+  it("updates threshold, scale and highlighting without changing analysis identity, including undo/redo", () => {
+    const p = makeProject(newModel());
+    p.schemes[0].boundary = [2, 2, 2];
+    p.schemes[0].settings.voxel = 1;
+    state().loadProject(p);
+    const s = state().project.schemes[0],
+      result = simulate(s);
+    state().set({ result });
+    state().updateSettings({ coverageThreshold: 8 });
+    state().updateSettings({ coverageScaleMax: 12, highlightCoverageThreshold: true });
+    expect(state().project.schemes[0].revision).toBe(s.revision);
+    expect(currentResult(state().project.schemes[0], state().result)).toBe(result);
+    expect(state().project.schemes[0].settings).toMatchObject({
+      coverageThreshold: 8,
+      coverageScaleMax: 12,
+      highlightCoverageThreshold: true,
+    });
+    state().undo();
+    expect(state().result).toBe(result);
+    state().redo();
+    expect(state().result).toBe(result);
+    state().updateSettings({ coverageBasis: "trackingRange" });
+    expect(currentResult(state().project.schemes[0], state().result)).toBeNull();
+    expect(state().project.schemes[0].revision).toBe(s.revision + 1);
+    state().updateSettings({ trackingRangeSource: "manual", trackingRangeOverrideM: 20 });
+    expect(state().project.schemes[0].revision).toBe(s.revision + 2);
+  });
   it("migrates legacy project snapshots across schemes once and invalidates their analysis revisions", () => {
     const model = { ...newModel(), minimum_marker_pixels: 4 };
     delete model.marker_threshold_version;

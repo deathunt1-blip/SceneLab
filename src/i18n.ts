@@ -1,6 +1,8 @@
 import { useStore } from "./store";
 import { adZh, adEn } from "./autoDeploy/messages";
+import { coverageZh, coverageEn } from "./coverageMessages";
 const zh = {
+  ...coverageZh,
   ...adZh,
   exportReportPackage: "导出技术报告包",
   packageSubtitle: "导出工程数据与图片，供其他软件读取",
@@ -245,7 +247,7 @@ const zh = {
   diameter: "直径",
   issues: "问题诊断",
   issueHint: "点击问题定位到一个代表性采样点",
-  issue_coverage: "少于 2 个有效视点",
+  issue_coverage: "无法形成基本多目定位",
   issue_accuracy: "预计误差超过阈值",
   issue_occluded: "存在遮挡观测",
   issue_small: "存在 Marker 过小观测",
@@ -290,7 +292,8 @@ const zh = {
   minDistance: "最近工作距离",
   maxDistance: "最远工作距离",
   minPixels: "Marker 最小投影尺寸",
-  minPixelsHint: "投影宽、高均须达到此值。例如 1.5 表示至少 1.5 × 1.5 px，不是像素面积阈值。",
+  minPixelsHint:
+    "投影宽、高均须达到此值。例如 1.5 表示至少 1.5 × 1.5 px，不是像素面积阈值。",
   pixelError: "图像点定位误差",
   notes: "备注",
   source: "参数来源",
@@ -396,7 +399,7 @@ const zh = {
   replace: "替换",
   newProjectConfirm: "创建空白项目",
   resetDemo: "打开演示项目",
-  appVersion: "SceneLab v1.4.2",
+  appVersion: "SceneLab v1.5.0",
   deleteModelHint: "删除型号不会影响现有项目的参数快照。",
   cameraPreviewNote:
     "采用相同内参投影。Marker 符号放大便于查看，遮挡点以红色显示；诊断数值使用实际像素直径。",
@@ -414,6 +417,7 @@ const zh = {
   minCameraNote: "至少 2 个有效视点且几何非退化时才输出精度。",
 };
 const en: Record<keyof typeof zh, string> = {
+  ...coverageEn,
   ...adEn,
   exportReportPackage: "Export report package",
   packageSubtitle: "Export engineering data and images for other software",
@@ -670,7 +674,7 @@ const en: Record<keyof typeof zh, string> = {
   diameter: "Diameter",
   issues: "Diagnostics",
   issueHint: "Select an issue to focus a representative sample",
-  issue_coverage: "Fewer than 2 effective viewpoints",
+  issue_coverage: "Cannot form basic multi-view localization",
   issue_accuracy: "Error above threshold",
   issue_occluded: "Occluded camera observations",
   issue_small: "Markers below pixel threshold",
@@ -717,7 +721,8 @@ const en: Record<keyof typeof zh, string> = {
   minDistance: "Min. working distance",
   maxDistance: "Max. working distance",
   minPixels: "Minimum marker projection size",
-  minPixelsHint: "Both projected width and height must reach this value. For example, 1.5 means at least 1.5 × 1.5 px, not a pixel-area threshold.",
+  minPixelsHint:
+    "Both projected width and height must reach this value. For example, 1.5 means at least 1.5 × 1.5 px, not a pixel-area threshold.",
   pixelError: "Pixel localization error",
   notes: "Notes",
   source: "Parameter source",
@@ -829,7 +834,7 @@ const en: Record<keyof typeof zh, string> = {
   replace: "Replace",
   newProjectConfirm: "Create empty project",
   resetDemo: "Open demo project",
-  appVersion: "SceneLab v1.4.2",
+  appVersion: "SceneLab v1.5.0",
   deleteModelHint: "Deleting a model does not affect existing project snapshots.",
   cameraPreviewNote:
     "Uses the same intrinsics. Marker symbols are enlarged for visibility; occluded points appear red. Diagnostics use actual pixel diameters.",

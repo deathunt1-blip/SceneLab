@@ -417,6 +417,8 @@ export function heatColor(
   layer: string,
   maxCount: number,
   maxError: number,
+  threshold = 3,
+  highlight = false,
 ) {
   if (layer === "accuracy") {
     if (!Number.isFinite(error)) return new THREE.Color("#c1cbd1");
@@ -426,7 +428,8 @@ export function heatColor(
     );
   }
   if (!count) return new THREE.Color("#a7b5bb");
-  const t = Math.min(1, count / Math.max(1, maxCount));
+  if (highlight && count < threshold) return new THREE.Color("#adbcc8");
+  const t = Math.max(0, Math.min(1, count / Math.max(1, maxCount)));
   const colors = ["#3a68c7", "#26bacc", "#41c89c", "#b8d850", "#efb64b", "#e76c4e"];
   const i = t * (colors.length - 1);
   return new THREE.Color(colors[Math.floor(i)]).lerp(

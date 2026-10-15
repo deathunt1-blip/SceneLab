@@ -6,6 +6,7 @@ import type {
   PointResult,
   SceneObject,
   Scheme,
+  Settings,
   SimulationResult,
   Vec3,
 } from "../models";
@@ -153,6 +154,7 @@ export function observe(
   diameter: number,
   c: PreparedCamera,
   occluders: SceneObject[],
+  settings: Partial<Settings> = {},
 ): Observation {
   const { z, u, v, distance } = project(p, c),
     m = c.model;
@@ -162,6 +164,9 @@ export function observe(
     eye: c.eye,
     cameraPosition: c.object.position,
     valid: false,
+    imagingValid: false,
+    coverageValid: false,
+    coverageReasons: [],
     reasons: [],
     distance,
     u,
@@ -194,6 +199,19 @@ export function observe(
     out.intersection = add(c.object.position, mul(sub(p, c.object.position), nearest));
   }
   out.valid = out.reasons.length === 0;
+  out.imagingValid = out.valid;
+  const tracking = settings.coverageBasis === "trackingRange";
+  out.coverageReasons = !tracking
+    ? [...out.reasons]
+    : out.reasons.filter((r) => !["small", "edge", "far"].includes(r));
+  if (tracking) {
+    const maximum =
+      settings.trackingRangeSource === "manual"
+        ? (settings.trackingRangeOverrideM ?? null)
+        : m.max_working_distance_m;
+    if (maximum !== null && distance > maximum) out.coverageReasons.push("far");
+  }
+  out.coverageValid = out.coverageReasons.length === 0;
   return out;
 }
 export function jacobian(p: Vec3, c: PreparedCamera): [Vec3, Vec3] {
@@ -241,11 +259,11 @@ export function accuracy(p: Vec3, cs: PreparedCamera[]): Accuracy | null {
 export function analyzePoint(p: Vec3, diameter: number, s: Scheme): PointResult {
   const cs = prepareCameras(s),
     obs = obstacles(s),
-    observations = cs.map((c) => observe(p, diameter, c, obs));
+    observations = cs.map((c) => observe(p, diameter, c, obs, s.settings));
   const valid = cs.filter((_, i) => observations[i].valid);
   return {
     position: p,
-    count: valid.length,
+    count: observations.filter((o) => o.coverageValid).length,
     accuracy: accuracy(p, valid),
     observations,
   };
@@ -294,7 +312,8 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
     obs = obstacles(s);
   const ns = s.boundary.map((v) => Math.ceil(v / step));
   const finiteErrors: number[] = [],
-    coverage = Array(5).fill(0);
+    coverage = Array(5).fill(0),
+    viewCountHistogram = Array(cs.length + 1).fill(0);
   let used = 0,
     excluded = 0,
     sumCount = 0,
@@ -325,14 +344,18 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
           excluded++;
           continue;
         }
-        const observations = cs.map((c) => observe(p, s.settings.markerDiameter, c, obs)),
+        const observations = cs.map((c) =>
+            observe(p, s.settings.markerDiameter, c, obs, s.settings),
+          ),
+          covered = observations.filter((o) => o.coverageValid).length,
           valid = cs.filter((_, i) => observations[i].valid),
           acc = accuracy(p, valid);
         positions.set(p, used * 3);
-        counts[used] = valid.length;
+        counts[used] = covered;
         errors[used] = acc?.rms ?? NaN;
-        sumCount += valid.length;
-        for (let k = 1; k <= 5; k++) if (valid.length >= k) coverage[k - 1]++;
+        sumCount += covered;
+        viewCountHistogram[covered]++;
+        for (let k = 1; k <= 5; k++) if (covered >= k) coverage[k - 1]++;
         if (acc) {
           finiteErrors.push(acc.rms);
           if (acc.rms <= 0.3) under03++;
@@ -367,6 +390,7 @@ export function simulate(s: Scheme, progress?: (p: number) => void): SimulationR
     validVoxels: used,
     excludedVoxels: excluded,
     coverage: coverage.map((n) => (used ? (n / used) * 100 : 0)),
+    viewCountHistogram,
     averageCount: used ? sumCount / used : 0,
     meanError: finiteErrors.length
       ? finiteErrors.reduce((a, b) => a + b, 0) / finiteErrors.length

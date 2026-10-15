@@ -1,6 +1,7 @@
 import type { Scheme, SimulationResult, Vec3 } from "../models";
 import { observe, obstacles, prepareCameras } from "../simulation/engine";
 import type { Constraints, Diagnosis } from "./types";
+import { coverageAt, coverageSettings } from "../simulation/coverage";
 
 export function diagnose(s: Scheme, r: SimulationResult, c: Constraints): Diagnosis[] {
   const cameras = prepareCameras(s),
@@ -17,13 +18,18 @@ export function diagnose(s: Scheme, r: SimulationResult, c: Constraints): Diagno
   for (let i = 0; i < r.validVoxels; i += stride) {
     sampled++;
     const p: Vec3 = [r.positions[i * 3], r.positions[i * 3 + 1], r.positions[i * 3 + 2]];
-    const observations = cameras.map((cam) => observe(p, c.markerDiameter, cam, obs));
+    const observations = cameras.map((cam) =>
+      observe(p, c.markerDiameter, cam, obs, s.settings),
+    );
     const issue = (code: string) => count.set(code, (count.get(code) || 0) + 1);
     if (
-      observations.some((o) => o.reasons.includes("close") || o.reasons.includes("far"))
+      observations.some(
+        (o) => o.coverageReasons.includes("close") || o.coverageReasons.includes("far"),
+      )
     )
       issue("distance");
     if (
+      coverageSettings(s.settings).coverageBasis === "imaging" &&
       observations.some(
         (o) =>
           o.reasons.includes("small") && !o.reasons.some((reason) => reason !== "small"),
@@ -41,7 +47,7 @@ export function diagnose(s: Scheme, r: SimulationResult, c: Constraints): Diagno
         .filter(
           (o) =>
             o.occluderId &&
-            !o.reasons.some((reason) =>
+            !o.coverageReasons.some((reason) =>
               ["fov", "behind", "far", "close"].includes(reason),
             ),
         )
@@ -50,7 +56,7 @@ export function diagnose(s: Scheme, r: SimulationResult, c: Constraints): Diagno
     if (blocked.size) issue("occlusion");
     blocked.forEach((id) => occluded.set(id, (occluded.get(id) || 0) + 1));
     if (
-      r.counts[i] >= 2 &&
+      observations.filter((o) => o.imagingValid).length >= 2 &&
       (!Number.isFinite(r.errors[i]) || r.errors[i] > c.errorThreshold)
     )
       issue("geometry");
@@ -87,10 +93,10 @@ export function diagnose(s: Scheme, r: SimulationResult, c: Constraints): Diagno
   }
   if (upper && lower && upperHit / upper + 0.15 < lowerHit / lower)
     diagnoses.push({ code: "layers", affected: upper - upperHit, sampled: upper });
-  if (r.coverage[c.minViews - 1] < c.coverageTarget)
+  if (coverageAt(r, c.minViews) < c.coverageTarget)
     diagnoses.push({
       code: "coverage",
-      affected: Math.round((1 - r.coverage[c.minViews - 1] / 100) * r.validVoxels),
+      affected: Math.round((1 - coverageAt(r, c.minViews) / 100) * r.validVoxels),
       sampled: r.validVoxels,
     });
   return diagnoses;

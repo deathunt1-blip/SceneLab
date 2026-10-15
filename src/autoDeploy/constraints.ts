@@ -1,14 +1,20 @@
 import type { CameraModel, Scheme } from "../models";
 import { sampleCount } from "../simulation/engine";
+import {
+  coverageSettings,
+  validCoverageSettings,
+  MAX_COVERAGE_VIEWS,
+} from "../simulation/coverage";
 import { profiles, type Constraints } from "./types";
 
 export function defaultConstraints(s: Scheme): Constraints {
   return {
+    ...coverageSettings(s.settings),
     boundary: [...s.boundary],
     markerDiameter: s.settings.markerDiameter,
     errorThreshold: s.settings.errorThreshold,
     accuracyTarget: 90,
-    minViews: 3,
+    minViews: coverageSettings(s.settings).coverageThreshold,
     coverageTarget: 95,
     modelIds: [],
     countMode: "auto",
@@ -42,7 +48,9 @@ export function validateConstraints(
     !number(c.errorThreshold, 0.001, 1000) ||
     !number(c.coverageTarget, 1, 100) ||
     (c.accuracyTarget !== null && !number(c.accuracyTarget, 1, 100)) ||
-    ![2, 3, 4].includes(c.minViews) ||
+    !Number.isInteger(c.minViews) ||
+    !number(c.minViews, 1, MAX_COVERAGE_VIEWS) ||
+    !validCoverageSettings(c) ||
     !profiles.includes(c.profile) ||
     !["center", "uniform"].includes(c.weighting) ||
     !["auto", "perimeter", "ceiling", "hybrid", "free", "existing"].includes(
